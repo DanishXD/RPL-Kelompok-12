@@ -13,7 +13,7 @@ export class AuthService {
     const existing = await db.select({ id: users.id }).from(users).where(eq(users.email, input.email)).limit(1);
     if (existing.length > 0) throw { statusCode: 409, message: 'Email sudah terdaftar' };
     const passwordHash = await bcrypt.hash(input.password, 12);
-    const [newUser] = await db.insert(users).values({ name: input.name, email: input.email, passwordHash, role: 'user' })
+    const [newUser] = await db.insert(users).values({ name: input.name, fullName: input.name, email: input.email, passwordHash, role: 'user' })
       .returning({ id: users.id, name: users.name, email: users.email, role: users.role, createdAt: users.createdAt });
     const tokens = await this.generateTokens(newUser);
     return { user: newUser, ...tokens };

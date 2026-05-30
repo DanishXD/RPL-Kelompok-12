@@ -30,7 +30,7 @@ export class AlertEngine {
     return triggered;
   }
 
-  async sendPushNotification(pushToken: string, title: string, body: string, data?: object): Promise<boolean> {
+  async sendPushNotification(pushToken: string, title: string, body: string, data?: Record<string, unknown>): Promise<boolean> {
     if (!Expo.isExpoPushToken(pushToken)) return false;
     const message: ExpoPushMessage = { to: pushToken, sound: 'default', title, body, data, priority: 'high', channelId: 'ecosmart-alerts' };
     try {
