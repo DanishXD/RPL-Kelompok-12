@@ -1,7 +1,7 @@
 {
   "name": "ecosmart-backend",
-  "version": "1.0.0",
-  "description": "EcoSmart Feeder Backend API",
+  "version": "5.0.0",
+  "description": "EcoSmart Feeder Backend API - Step 1-9 Complete",
   "scripts": {
     "dev": "tsx watch src/app.ts",
     "build": "tsc",
@@ -17,14 +17,14 @@
     "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.30.10",
+    "expo-server-sdk": "^3.10.0",
     "fastify": "^4.27.0",
     "fastify-plugin": "^4.5.1",
+    "groq-sdk": "^0.3.3",
     "mqtt": "^5.5.0",
     "pg": "^8.11.5",
-    "zod": "^3.23.8",
     "socket.io": "^4.7.5",
-    "@types/socket.io": "^3.0.2",
-    "expo-server-sdk": "^3.10.0"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",

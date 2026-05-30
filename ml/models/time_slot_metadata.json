@@ -1,0 +1,29 @@
+{
+  "target": "time_slot",
+  "features": [
+    "temperature",
+    "ph_level",
+    "feed_level",
+    "light_level",
+    "hour"
+  ],
+  "classes": {
+    "0": "Pagi (06-08)",
+    "1": "Siang (12-13)",
+    "2": "Sore (17-18)",
+    "3": "Tidak Direkomendasikan"
+  },
+  "accuracy": 0.7925,
+  "cv_accuracy_mean": 0.8085,
+  "cv_accuracy_std": 0.0138,
+  "max_depth": 6,
+  "n_train": 1600,
+  "n_test": 400,
+  "feature_importance": {
+    "temperature": 0.3168,
+    "ph_level": 0.0376,
+    "feed_level": 0.0012,
+    "light_level": 0.0077,
+    "hour": 0.6366
+  }
+}

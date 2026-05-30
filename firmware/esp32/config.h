@@ -6,38 +6,52 @@
 #define WIFI_PASSWORD   "PASSWORD_WIFI_KAMU"
 
 // ── MQTT Broker ───────────────────────────────────────────────────────────────
-// Ganti dengan IP komputer yang menjalankan docker compose
-// Cari IP komputer: ipconfig (Windows) / ifconfig (Mac/Linux)
-#define MQTT_BROKER     "192.168.1.42"   // <-- GANTI INI
-#define MQTT_PORT       1883
-#define MQTT_CLIENT_ID  "esp32-ecosmart-01"
+// Pilih salah satu:
+//
+// [A] LOCAL (development di rumah):
+//     #define MQTT_BROKER   "192.168.1.100"   ← IP komputer
+//     #define MQTT_PORT     1883
+//     #define MQTT_USE_SSL  false
+//
+// [B] HIVEMQ CLOUD (production):
+//     #define MQTT_BROKER   "abc123.s1.eu.hivemq.cloud"
+//     #define MQTT_PORT     8883
+//     #define MQTT_USE_SSL  true
 
-// ── Device Identity ───────────────────────────────────────────────────────────
-// Dapatkan ini setelah daftarkan device via API POST /api/devices
-#define DEVICE_ID       "UUID-DEVICE-DARI-DATABASE"   // <-- GANTI INI
-#define DEVICE_TOKEN    "TOKEN-DEVICE-DARI-DATABASE"  // <-- GANTI INI
+#define MQTT_BROKER   "abc123.s1.eu.hivemq.cloud"  // <-- GANTI dengan cluster URL kamu
+#define MQTT_PORT     8883
+#define MQTT_USE_SSL  true
+
+// HiveMQ Cloud credentials
+#define MQTT_USER     "ecosmart-backend"   // <-- GANTI sesuai yang dibuat di HiveMQ
+#define MQTT_PASSWORD "password-hivemq"    // <-- GANTI
+
+#define MQTT_CLIENT_ID "esp32-ecosmart-01"
+
+// ── Device (dapat dari halaman Setup Device di app) ───────────────────────────
+#define DEVICE_ID     "UUID-DARI-APP"    // <-- GANTI
+#define DEVICE_TOKEN  "TOKEN-DARI-APP"   // <-- GANTI
 
 // ── MQTT Topics ───────────────────────────────────────────────────────────────
-#define TOPIC_SENSORS   "ecosmart/" DEVICE_ID "/sensors"
-#define TOPIC_STATUS    "ecosmart/" DEVICE_ID "/status"
-#define TOPIC_COMMANDS  "ecosmart/" DEVICE_ID "/commands"
+#define TOPIC_SENSORS  "ecosmart/" DEVICE_ID "/sensors"
+#define TOPIC_STATUS   "ecosmart/" DEVICE_ID "/status"
+#define TOPIC_COMMANDS "ecosmart/" DEVICE_ID "/commands"
 
 // ── Pin Sensor ────────────────────────────────────────────────────────────────
-#define PIN_TEMP_SENSOR     4    // DS18B20 atau DHT22
-#define PIN_PH_SENSOR       34   // Analog input (ADC1)
-#define PIN_LDR_SENSOR      35   // Analog input (ADC1)
-#define PIN_ULTRASONIC_TRIG 5    // Sensor ultrasonik TRIG
-#define PIN_ULTRASONIC_ECHO 18   // Sensor ultrasonik ECHO
-#define PIN_RELAY           2    // Relay motor pakan
+#define PIN_PH_SENSOR       34   // Analog ADC1
+#define PIN_LDR_SENSOR      35   // Analog ADC1
+#define PIN_ULTRASONIC_TRIG 5
+#define PIN_ULTRASONIC_ECHO 18
+#define PIN_RELAY           2
 
-// ── Kalibrasi Sensor ─────────────────────────────────────────────────────────
-#define PH_VOLTAGE_REF      3.3   // Tegangan referensi ESP32 (volt)
-#define PH_OFFSET           0.0   // Offset kalibrasi pH (sesuaikan)
-#define FEED_CONTAINER_CM   30.0  // Tinggi wadah pakan dalam cm (saat penuh)
-#define FEED_EMPTY_CM       2.0   // Jarak minimum sensor ke pakan (dianggap habis)
+// ── Kalibrasi ────────────────────────────────────────────────────────────────
+#define PH_VOLTAGE_REF    3.3
+#define PH_OFFSET         0.0
+#define FEED_CONTAINER_CM 30.0
+#define FEED_EMPTY_CM     2.0
 
 // ── Interval ──────────────────────────────────────────────────────────────────
-#define SENSOR_INTERVAL_MS  5000  // Baca & kirim sensor setiap 5 detik
-#define RECONNECT_DELAY_MS  3000  // Coba reconnect setiap 3 detik
+#define SENSOR_INTERVAL_MS 5000
+#define RECONNECT_DELAY_MS 3000
 
 #endif

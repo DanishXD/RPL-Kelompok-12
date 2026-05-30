@@ -1,11 +1,10 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-// ── Ganti IP sesuai komputer kamu ─────────────────────────────────────────────
+// Ganti IP sesuai komputer kamu
 // Emulator Android  → 10.0.2.2
-// HP fisik / Expo Go → IP komputer (cek dengan ipconfig)
-// iOS Simulator     → localhost
-const BASE_URL = 'http://192.168.1.42:3000/api';
+// HP fisik          → IP komputer (ipconfig)
+const BASE_URL = 'http://10.0.2.2:3000/api';
 
 export const TOKEN_KEYS = {
   ACCESS:  'ecosmart_access_token',
@@ -19,16 +18,12 @@ const api: AxiosInstance = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Otomatis tambahkan access token ke setiap request
 api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
   const token = await SecureStore.getItemAsync(TOKEN_KEYS.ACCESS);
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  if (token && config.headers) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// Auto-refresh token kalau 401
 let isRefreshing = false;
 let failedQueue: Array<{ resolve: (t: string) => void; reject: (e: unknown) => void }> = [];
 
@@ -41,22 +36,13 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const orig = error.config;
-    if (
-      error.response?.status === 401 &&
-      !orig._retry &&
-      !orig.url?.includes('/auth/refresh') &&
-      !orig.url?.includes('/auth/login')
-    ) {
+    if (error.response?.status === 401 && !orig._retry && !orig.url?.includes('/auth/refresh') && !orig.url?.includes('/auth/login')) {
       if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        }).then((token) => {
-          orig.headers.Authorization = `Bearer ${token}`;
-          return api(orig);
-        });
+        return new Promise((resolve, reject) => { failedQueue.push({ resolve, reject }); })
+          .then((token) => { orig.headers.Authorization = `Bearer ${token}`; return api(orig); });
       }
-      orig._retry = true;
-      isRefreshing = true;
+      orig._retry   = true;
+      isRefreshing  = true;
       try {
         const refreshToken = await SecureStore.getItemAsync(TOKEN_KEYS.REFRESH);
         if (!refreshToken) throw new Error('No refresh token');
@@ -66,15 +52,13 @@ api.interceptors.response.use(
         processQueue(null, data.data.accessToken);
         orig.headers.Authorization = `Bearer ${data.data.accessToken}`;
         return api(orig);
-      } catch (refreshError) {
-        processQueue(refreshError, null);
+      } catch (e) {
+        processQueue(e, null);
         await SecureStore.deleteItemAsync(TOKEN_KEYS.ACCESS);
         await SecureStore.deleteItemAsync(TOKEN_KEYS.REFRESH);
         await SecureStore.deleteItemAsync(TOKEN_KEYS.USER);
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
+        return Promise.reject(e);
+      } finally { isRefreshing = false; }
     }
     return Promise.reject(error);
   }

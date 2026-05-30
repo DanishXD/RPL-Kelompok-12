@@ -3,32 +3,42 @@ import { FastifyInstance } from 'fastify';
 import { IotService } from './iot.service';
 import { mqttPayloadSchema } from './iot.schema';
 import { SOCKET_EVENTS } from '../../plugins/socket';
-import { AlertEngine } from '../alerts/alert.engine';
-
-const TOPIC_SENSORS = 'ecosmart/+/sensors';
-const TOPIC_STATUS  = 'ecosmart/+/status';
 
 let mqttClient: MqttClient | null = null;
 
 export async function startMqttBridge(fastify: FastifyInstance): Promise<void> {
-  const brokerUrl  = process.env.MQTT_BROKER_URL ?? 'mqtt://localhost:1883';
-  const clientId   = process.env.MQTT_CLIENT_ID  ?? 'ecosmart-backend';
-  const iotService  = new IotService(fastify);
-  const alertEngine = new AlertEngine(fastify);
+  const brokerUrl = process.env.MQTT_BROKER_URL ?? 'mqtt://localhost:1883';
+  const iotService = new IotService(fastify);
 
-  mqttClient = mqtt.connect(brokerUrl, {
-    clientId: `${clientId}-${Date.now()}`,
-    clean: true,
+  // ── Deteksi apakah pakai HiveMQ Cloud (mqtts://) atau lokal (mqtt://) ──────
+  const isCloud = brokerUrl.startsWith('mqtts://');
+
+  const connectOptions: mqtt.IClientOptions = {
+    clientId:        `ecosmart-backend-${Date.now()}`,
+    clean:           true,
     reconnectPeriod: 3000,
-    connectTimeout: 10_000,
-    keepalive: 60,
-  });
+    connectTimeout:  10_000,
+    keepalive:       60,
+  };
+
+  // Tambah auth kalau pakai HiveMQ Cloud
+  if (isCloud) {
+    connectOptions.username           = process.env.MQTT_USERNAME;
+    connectOptions.password           = process.env.MQTT_PASSWORD;
+    connectOptions.rejectUnauthorized = false; // Skip cert verification untuk simplicity
+    fastify.log.info('MQTT: Using cloud broker with SSL/TLS auth');
+  } else {
+    fastify.log.info('MQTT: Using local broker without auth');
+  }
+
+  fastify.log.info(`Connecting to MQTT broker: ${brokerUrl}`);
+  mqttClient = mqtt.connect(brokerUrl, connectOptions);
 
   mqttClient.on('connect', () => {
     fastify.log.info('✅ MQTT broker connected');
-    mqttClient!.subscribe([TOPIC_SENSORS, TOPIC_STATUS], { qos: 1 }, (err) => {
-      if (err) fastify.log.error({ err }, 'Failed to subscribe MQTT topics');
-      else fastify.log.info(`Subscribed: ${TOPIC_SENSORS}, ${TOPIC_STATUS}`);
+    mqttClient!.subscribe(['ecosmart/+/sensors', 'ecosmart/+/status'], { qos: 1 }, (err) => {
+      if (err) fastify.log.error({ err }, 'MQTT subscribe failed');
+      else     fastify.log.info('MQTT subscribed to ecosmart/+/sensors and ecosmart/+/status');
     });
   });
 
@@ -74,12 +84,16 @@ export async function startMqttBridge(fastify: FastifyInstance): Promise<void> {
             timestamp:   result.data.timestamp ?? new Date().toISOString(),
           });
 
-          // 3. Cek threshold dan fire alert jika perlu
-          alertEngine.checkAndFire(deviceId, {
-            temperature: result.data.temperature,
-            phLevel:     result.data.phLevel,
-            feedLevel:   result.data.feedLevel,
-          });
+          // 3. Cek threshold & fire alert
+          const alerts = iotService.checkThresholds(sensorData);
+          if (alerts.length > 0) {
+            fastify.io.to(`device:${deviceId}`).emit(SOCKET_EVENTS.ALERT_TRIGGERED, {
+              deviceId,
+              alerts,
+              timestamp: new Date().toISOString(),
+            });
+            fastify.log.warn({ alerts, deviceId }, '⚠️ Threshold exceeded');
+          }
 
         } catch (err: any) {
           fastify.log.error({ err: err.message, deviceId }, 'Failed to process MQTT data');
@@ -110,7 +124,9 @@ export async function startMqttBridge(fastify: FastifyInstance): Promise<void> {
 }
 
 export function publishToDevice(
-  deviceId: string, command: string, payload: object
+  deviceId: string,
+  command:  string,
+  payload:  object
 ): void {
   if (!mqttClient?.connected) throw new Error('MQTT client not connected');
   mqttClient.publish(

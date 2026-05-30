@@ -1,144 +1,54 @@
 # EcoSmart Feeder — Backend API
 
-## Prasyarat
-- Node.js 20+
-- Docker & Docker Compose
-- Git
+## Tech Stack
+- **Runtime**: Node.js 20 + TypeScript
+- **Framework**: Fastify
+- **Database**: PostgreSQL (Supabase) + InfluxDB Cloud
+- **Real-time**: Socket.io
+- **MQTT**: HiveMQ Cloud
+- **AI**: Groq API (Llama 3)
 
----
+## Deploy ke Render
 
-## Setup Awal (Lakukan Sekali)
-
-### 1. Clone & masuk ke folder backend
+### 1. Push ke GitHub
 ```bash
-cd ecosmart-feeder/apps/backend
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/USERNAME/ecosmart-backend.git
+git push -u origin main
 ```
 
-### 2. Copy file environment
-```bash
-cp .env.example .env
+### 2. Buat Web Service di Render
+- Build Command: `npm install && npm run build`
+- Start Command: `npm start`
+
+### 3. Environment Variables di Render
 ```
-Buka `.env` dan isi nilainya (terutama `JWT_SECRET`).
-
-Generate JWT_SECRET yang aman:
-```bash
-node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
-```
-
-### 3. Jalankan database lokal
-```bash
-# Dari folder root ecosmart-feeder/
-docker compose up -d
-
-# Cek semua service jalan
-docker compose ps
-```
-
-### 4. Install dependencies
-```bash
-npm install
+NODE_ENV            = production
+DATABASE_URL        = postgresql://... (Supabase)
+JWT_SECRET          = random-64-chars
+INFLUXDB_URL        = https://ap-southeast-1-1.aws.cloud2.influxdata.com
+INFLUXDB_TOKEN      = token-influxdb-cloud
+INFLUXDB_ORG        = org-influxdb
+INFLUXDB_BUCKET     = sensors
+MQTT_BROKER_URL     = mqtts://cluster.hivemq.cloud:8883
+MQTT_USERNAME       = ecosmart-backend
+MQTT_PASSWORD       = password-hivemq
+GROQ_API_KEY        = gsk_xxxxx
+GROQ_MODEL          = llama3-8b-8192
 ```
 
-### 5. Generate & jalankan migrasi database
+### 4. Jalankan migrasi ke Supabase
 ```bash
-# Generate SQL migration dari schema
-npm run db:generate
-
-# Jalankan migration ke PostgreSQL
+# Set DATABASE_URL ke Supabase dulu di .env lokal
 npm run db:migrate
 ```
 
----
-
-## Menjalankan Server
-
-```bash
-# Mode development (auto-restart saat file berubah)
-npm run dev
-```
-
-Server berjalan di: `http://localhost:3000`
-
----
-
-## Test Endpoint di Postman / Thunder Client
-
-### Register akun baru
-```
-POST http://localhost:3000/api/auth/register
-Content-Type: application/json
-
-{
-  "name": "Budi Suryanto",
-  "email": "budi@example.com",
-  "password": "Kolam123"
-}
-```
-
-### Login
-```
-POST http://localhost:3000/api/auth/login
-Content-Type: application/json
-
-{
-  "email": "budi@example.com",
-  "password": "Kolam123"
-}
-```
-
-### Lihat profil (butuh token dari login)
-```
-GET http://localhost:3000/api/auth/me
-Authorization: Bearer <accessToken dari response login>
-```
-
-### Refresh token
-```
-POST http://localhost:3000/api/auth/refresh
-Content-Type: application/json
-
-{
-  "refreshToken": "<refreshToken dari response login>"
-}
-```
-
-### Logout
-```
-DELETE http://localhost:3000/api/auth/logout
-Content-Type: application/json
-
-{
-  "refreshToken": "<refreshToken>"
-}
-```
-
-### Health check
-```
-GET http://localhost:3000/health
-```
-
----
-
-## Struktur File
-
-```
-src/
-├── app.ts                    ← Entry point, register semua plugin & route
-├── plugins/
-│   └── db.ts                 ← Koneksi PostgreSQL
-└── modules/
-    └── auth/
-        ├── auth.routes.ts    ← Endpoint definitions
-        ├── auth.service.ts   ← Business logic
-        └── auth.schema.ts    ← Validasi input (Zod)
-drizzle/
-├── schema.ts                 ← Definisi tabel database
-└── migrations/               ← File SQL migration
-```
-
----
-
-## Step Selanjutnya
-Setelah auth berjalan, lanjut ke:
-- **Step 3**: Halaman Login & Signup di mobile (React Native)
-- **Step 4**: IoT data ingestion — MQTT + InfluxDB
+## Endpoints
+- `POST /api/auth/register` — Daftar akun
+- `POST /api/auth/login`    — Login
+- `POST /api/devices`       — Daftarkan ESP32
+- `POST /api/iot/ingest`    — Kirim data sensor
+- `POST /api/chat/message`  — Chat AI
+- `GET  /health`            — Health check

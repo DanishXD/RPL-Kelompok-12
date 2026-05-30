@@ -11,27 +11,11 @@ declare module 'fastify' {
 }
 
 export default fp(async (fastify: FastifyInstance) => {
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    max: 20,
-    idleTimeoutMillis: 30_000,
-    connectionTimeoutMillis: 5_000,
-  });
-
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 20 });
   try {
-    const client = await pool.connect();
-    await client.query('SELECT 1');
-    client.release();
+    const c = await pool.connect(); await c.query('SELECT 1'); c.release();
     fastify.log.info('✅ PostgreSQL connected');
-  } catch (error) {
-    fastify.log.error({ err: error }, '❌ PostgreSQL connection failed');
-    throw error;
-  }
-
-  const db = drizzle(pool, { schema });
-  fastify.decorate('db', db);
-
-  fastify.addHook('onClose', async () => {
-    await pool.end();
-  });
+  } catch (err) { fastify.log.error({ err }, '❌ PostgreSQL failed'); throw err; }
+  fastify.decorate('db', drizzle(pool, { schema }));
+  fastify.addHook('onClose', async () => { await pool.end(); });
 });

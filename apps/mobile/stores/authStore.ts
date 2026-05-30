@@ -2,17 +2,10 @@ import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 import api, { TOKEN_KEYS } from '../lib/api';
 
-export interface User {
-  id:    string;
-  name:  string;
-  email: string;
-  role:  'admin' | 'user';
-}
+export interface User { id: string; name: string; email: string; role: 'admin' | 'user'; }
 
 interface AuthState {
-  user:            User | null;
-  isAuthenticated: boolean;
-  isLoading:       boolean;
+  user: User | null; isAuthenticated: boolean; isLoading: boolean;
   login:           (email: string, password: string) => Promise<void>;
   register:        (name: string, email: string, password: string) => Promise<void>;
   logout:          () => Promise<void>;
@@ -20,9 +13,7 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user:            null,
-  isAuthenticated: false,
-  isLoading:       true,
+  user: null, isAuthenticated: false, isLoading: true,
 
   login: async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
@@ -55,12 +46,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   loadFromStorage: async () => {
     try {
-      const userJson    = await SecureStore.getItemAsync(TOKEN_KEYS.USER);
-      const accessToken = await SecureStore.getItemAsync(TOKEN_KEYS.ACCESS);
-      if (userJson && accessToken) {
-        set({ user: JSON.parse(userJson), isAuthenticated: true });
-      }
-    } catch {}
-    finally { set({ isLoading: false }); }
+      const userJson = await SecureStore.getItemAsync(TOKEN_KEYS.USER);
+      const token    = await SecureStore.getItemAsync(TOKEN_KEYS.ACCESS);
+      if (userJson && token) set({ user: JSON.parse(userJson), isAuthenticated: true });
+    } catch {} finally { set({ isLoading: false }); }
   },
 }));

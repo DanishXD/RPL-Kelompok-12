@@ -1,54 +1,45 @@
 import { useEffect, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import { Platform } from 'react-native';
+import api from '../lib/api';
 
-// ── Tampilkan notifikasi saat app di foreground ───────────────────────────────
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge:  true,
-  }),
+  handleNotification: async () => ({ shouldShowAlert: true, shouldPlaySound: true, shouldSetBadge: true }),
 });
 
-// ── Minta izin notifikasi ─────────────────────────────────────────────────────
-async function requestPermission(): Promise<boolean> {
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  if (existing === 'granted') return true;
-  const { status } = await Notifications.requestPermissionsAsync();
-  return status === 'granted';
-}
-
-// ── Kirim local notification langsung ────────────────────────────────────────
-export async function sendLocalNotification(title: string, body: string) {
-  const granted = await requestPermission();
-  if (!granted) return;
-
-  await Notifications.scheduleNotificationAsync({
-    content: { title, body, sound: true },
-    trigger: null, // tampil langsung
-  });
-}
-
-// ── Hook: setup listener tap notifikasi ──────────────────────────────────────
-// Pemanggilan notifikasi dilakukan langsung dari sensorStore.addAlert()
-// sehingga tidak ada race condition
-export function usePushNotification(_deviceId: string | null) {
-  const tapListenerRef = useRef<Notifications.EventSubscription | null>(null);
+export function usePushNotification(deviceId: string | null) {
+  const notificationListener = useRef<Notifications.EventSubscription>();
+  const responseListener     = useRef<Notifications.EventSubscription>();
 
   useEffect(() => {
-    // Minta izin saat pertama kali mount
-    requestPermission();
+    if (!deviceId) return;
+    registerForPushNotifications(deviceId);
+    notificationListener.current = Notifications.addNotificationReceivedListener((n) => console.log('🔔 Notif:', n));
+    responseListener.current     = Notifications.addNotificationResponseReceivedListener((r) => console.log('👆 Tap:', r));
+    return () => { notificationListener.current?.remove(); responseListener.current?.remove(); };
+  }, [deviceId]);
+}
 
-    // Listener: user tap notifikasi → bisa navigasi ke alerts
-    tapListenerRef.current = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        console.log('👆 Notifikasi di-tap:', response.notification.request.content.title);
-        // TODO: router.push('/(app)/alerts')
-      }
-    );
-
-    return () => {
-      tapListenerRef.current?.remove();
-    };
-  }, []);
+async function registerForPushNotifications(deviceId: string) {
+  if (!Device.isDevice) { console.log('Push notification tidak jalan di emulator'); return; }
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+  if (existingStatus !== 'granted') {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+  }
+  if (finalStatus !== 'granted') { console.log('Izin notifikasi ditolak'); return; }
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('ecosmart-alerts', {
+      name: 'EcoSmart Alerts', importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250, 250, 250], lightColor: '#1B5E37',
+    });
+  }
+  try {
+    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId: 'ecosmart-feeder' });
+    console.log('📲 Push Token:', tokenData.data);
+    await api.post('/alerts/push-token', { pushToken: tokenData.data, deviceId });
+    console.log('✅ Push token registered');
+  } catch (err) { console.error('Push token error:', err); }
 }
