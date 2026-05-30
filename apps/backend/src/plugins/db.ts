@@ -11,11 +11,26 @@ declare module 'fastify' {
 }
 
 export default fp(async (fastify: FastifyInstance) => {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 20 });
+  // Debug: cek apakah DATABASE_URL terbaca
+  const dbUrl = process.env.DATABASE_URL;
+  if (!dbUrl) {
+    fastify.log.error('❌ DATABASE_URL environment variable is NOT set!');
+    throw new Error('DATABASE_URL missing');
+  }
+  // Hanya untuk debug: tampilkan awal URL (sembunyikan password)
+  const maskedUrl = dbUrl.replace(/:[^:@]+@/, ':*****@');
+  fastify.log.info(`DATABASE_URL is set: ${maskedUrl}`);
+  
+  const pool = new Pool({ connectionString: dbUrl, max: 20 });
   try {
-    const c = await pool.connect(); await c.query('SELECT 1'); c.release();
+    const c = await pool.connect(); 
+    await c.query('SELECT 1'); 
+    c.release();
     fastify.log.info('✅ PostgreSQL connected');
-  } catch (err) { fastify.log.error({ err }, '❌ PostgreSQL failed'); throw err; }
+  } catch (err) { 
+    fastify.log.error({ err }, '❌ PostgreSQL failed'); 
+    throw err; 
+  }
   fastify.decorate('db', drizzle(pool, { schema }));
   fastify.addHook('onClose', async () => { await pool.end(); });
 });
