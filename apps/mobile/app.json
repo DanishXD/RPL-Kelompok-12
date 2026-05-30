@@ -6,6 +6,8 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "ecosmart",
+    "extra": {
+      "apiUrl": "https://rpl-kelompok-12.onrender.com/api",
     "plugins": [
       "expo-router",
       "expo-secure-store",
@@ -30,7 +32,8 @@
       "router": {},
       "eas": {
         "projectId": "94eb9e5f-0d12-4abf-8e33-c0354f286463"
-      }
-    }
-  }
+       }
+     }
+   }
+ }
 }
