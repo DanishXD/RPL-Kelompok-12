@@ -6,7 +6,7 @@ import { useSensorStore } from '../stores/sensorStore';
 
 // Ganti IP sesuai komputer kamu
 // Emulator Android → 10.0.2.2 | HP fisik → IP komputer
-const SOCKET_URL = 'http://10.0.2.2:3000';
+const SOCKET_URL = 'https://rpl-kelompok-12.onrender.com';
 
 export function useWebSocket(deviceId: string | null) {
   const socketRef = useRef<Socket | null>(null);

@@ -4,7 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 // Ganti IP sesuai komputer kamu
 // Emulator Android  → 10.0.2.2
 // HP fisik          → IP komputer (ipconfig)
-const BASE_URL = 'http://10.0.2.2:3000/api';
+const BASE_URL = 'https://rpl-kelompok-12.onrender.com/api';
 
 export const TOKEN_KEYS = {
   ACCESS:  'ecosmart_access_token',
