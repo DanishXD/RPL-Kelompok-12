@@ -20,6 +20,11 @@ export class IotService {
 
   async saveSensorData(data: SensorDataInput): Promise<void> {
     const { writePoint, flush } = this.fastify.influx;
+    // Jika InfluxDB tidak tersedia (writePoint fungsi dummy atau null), lewati
+    if (!writePoint) {
+      this.fastify.log.warn('InfluxDB writePoint tidak tersedia, data sensor tidak disimpan');
+      return;
+    }
     const timestamp = data.timestamp ? new Date(data.timestamp) : new Date();
     const point = new Point('sensor_readings').tag('device_id', data.deviceId).timestamp(timestamp);
     if (data.temperature !== undefined) point.floatField('temperature', data.temperature);
@@ -32,6 +37,10 @@ export class IotService {
 
   async getLatestSensorData(deviceId: string): Promise<SensorReading> {
     const { queryApi } = this.fastify.influx;
+    if (!queryApi) {
+      this.fastify.log.warn('InfluxDB queryApi tidak tersedia');
+      throw { statusCode: 503, message: 'Layanan sensor tidak tersedia saat ini' };
+    }
     const bucket = process.env.INFLUXDB_BUCKET ?? 'sensors';
     const query = `from(bucket:"${bucket}")|>range(start:-24h)|>filter(fn:(r)=>r["_measurement"]=="sensor_readings")|>filter(fn:(r)=>r["device_id"]=="${deviceId}")|>last()|>pivot(rowKey:["_time"],columnKey:["_field"],valueColumn:"_value")`;
     const rows = await queryApi.collectRows<any>(query);
@@ -49,6 +58,10 @@ export class IotService {
 
   async getSensorHistory(deviceId: string, range: '1h'|'24h'|'7d'|'30d' = '24h', field?: string) {
     const { queryApi } = this.fastify.influx;
+    if (!queryApi) {
+      this.fastify.log.warn('InfluxDB queryApi tidak tersedia, mengembalikan history kosong');
+      return [];
+    }
     const bucket = process.env.INFLUXDB_BUCKET ?? 'sensors';
     const windowMap = { '1h':'1m', '24h':'30m', '7d':'3h', '30d':'1d' };
     const fieldFilter = field ? `|>filter(fn:(r)=>r["_field"]=="${field}")` : '';
