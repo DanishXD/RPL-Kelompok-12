@@ -5,6 +5,11 @@
 #include <ArduinoJson.h>
 #include "config.h"
 
+#define MQTT_BROKER   "mqtts://ecosmart-backend:EcoSmart2026@6f4b915a71cd4faea720da6f80917ca8.s1.eu.hivemq.cloud:8883"
+#define MQTT_PORT     8883
+#define MQTT_USE_SSL  true
+#define MQTT_USER     "ecosmart-backend"
+#define MQTT_PASSWORD "EcoSmart2026"
 // ── Client WiFi (pakai Secure kalau SSL) ─────────────────────────────────────
 #if MQTT_USE_SSL
   WiFiClientSecure wifiClient;
