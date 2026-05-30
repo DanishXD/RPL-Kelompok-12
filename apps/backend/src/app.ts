@@ -24,6 +24,13 @@ async function buildApp() {
       transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty', options: { colorize: true } } : undefined,
     },
   });
+
+  // 🔍 Cek environment variables penting
+  if (!process.env.JWT_SECRET) fastify.log.warn('⚠️ JWT_SECRET tidak diset!');
+  if (!process.env.DATABASE_URL) fastify.log.warn('⚠️ DATABASE_URL tidak diset!');
+  if (!process.env.GROQ_API_KEY) fastify.log.warn('⚠️ GROQ_API_KEY tidak diset!');
+  else fastify.log.info('✅ GROQ_API_KEY tersedia');
+
   await fastify.register(fastifyCors, { origin: '*', methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'], allowedHeaders: ['Content-Type','Authorization'] });
   await fastify.register(fastifyJwt as any, { secret: process.env.JWT_SECRET!, sign: { issuer: 'ecosmart-feeder', audience: 'ecosmart-app' }, verify: { issuer: 'ecosmart-feeder', audience: 'ecosmart-app' } });
   await fastify.register(dbPlugin);
@@ -39,7 +46,7 @@ async function buildApp() {
   await fastify.register(alertRoutes,   { prefix: '/api/alerts'  });
   await fastify.register(chatRoutes,    { prefix: '/api/chat'    });
   
-  // Route root (/) untuk menampilkan informasi API
+  // Route root (/)
   fastify.get('/', async () => ({
     message: 'EcoSmart Feeder API is running',
     version: '5.0.0',
