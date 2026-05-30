@@ -51,12 +51,15 @@ async function start() {
   const app  = await buildApp();
   const port = Number(process.env.PORT ?? 3000);
   try {
+    await startMqttBridge(app);
     await app.listen({ port, host: '0.0.0.0' });
     console.log(`\n🚀 EcoSmart API  →  http://localhost:${port}`);
     console.log(`❤️  Health        →  http://localhost:${port}/health`);
     console.log(`🔌 WebSocket     →  ws://localhost:${port}`);
     console.log(`🤖 AI Chat       →  POST http://localhost:${port}/api/chat/message\n`);
-    await startMqttBridge(app);
-  } catch (err) { app.log.error(err); process.exit(1); }
+  } catch (err) {
+    app.log.error(err);
+    process.exit(1);
+  }
 }
 start();
