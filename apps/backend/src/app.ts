@@ -38,6 +38,23 @@ async function buildApp() {
   await fastify.register(devicesRoutes, { prefix: '/api/devices' });
   await fastify.register(alertRoutes,   { prefix: '/api/alerts'  });
   await fastify.register(chatRoutes,    { prefix: '/api/chat'    });
+  
+  // Route root (/) untuk menampilkan informasi API
+  fastify.get('/', async () => ({
+    message: 'EcoSmart Feeder API is running',
+    version: '5.0.0',
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: '/health',
+      auth: '/api/auth',
+      iot: '/api/iot',
+      devices: '/api/devices',
+      alerts: '/api/alerts',
+      chat: '/api/chat'
+    }
+  }));
+  
   fastify.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString(), service: 'EcoSmart Feeder API', version: '5.0.0' }));
   fastify.setErrorHandler((error, _req, reply) => {
     fastify.log.error(error);
