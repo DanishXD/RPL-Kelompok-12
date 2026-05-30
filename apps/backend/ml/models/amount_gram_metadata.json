@@ -1,0 +1,29 @@
+{
+  "target": "amount_gram",
+  "features": [
+    "temperature",
+    "ph_level",
+    "feed_level",
+    "light_level",
+    "hour"
+  ],
+  "classes": {
+    "0": "50g",
+    "1": "100g",
+    "2": "150g",
+    "3": "200g"
+  },
+  "accuracy": 0.71,
+  "cv_accuracy_mean": 0.715,
+  "cv_accuracy_std": 0.0122,
+  "max_depth": 6,
+  "n_train": 1600,
+  "n_test": 400,
+  "feature_importance": {
+    "temperature": 0.309,
+    "ph_level": 0.3091,
+    "feed_level": 0.1583,
+    "light_level": 0.2146,
+    "hour": 0.009
+  }
+}

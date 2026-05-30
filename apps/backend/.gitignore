@@ -2,6 +2,11 @@ node_modules/
 dist/
 .env
 *.log
+<<<<<<< HEAD
 drizzle/meta/
 
 /generated/prisma
+=======
+.DS_Store
+drizzle/meta/
+>>>>>>> 7d551b9c248199ae1e3b464ec2b703ae73de988c
