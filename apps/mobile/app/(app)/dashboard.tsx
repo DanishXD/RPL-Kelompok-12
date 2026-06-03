@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, SafeAreaView, ActivityIndicator,
+  TouchableOpacity, ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useSensorStore } from '../../stores/sensorStore';
@@ -13,6 +14,7 @@ import SensorCard from '../../components/SensorCard';
 import AIChatFAB from '../../components/AIChatFAB';
 import { DEVICE_KEYS } from './setup-device';
 import { Colors } from '../../constants/colors';
+import api from '../../lib/api';
 
 function getTempStatus(t?: number): 'normal'|'warning'|'danger' {
   if (!t) return 'normal';
@@ -53,6 +55,33 @@ export default function DashboardScreen() {
 
   useWebSocket(deviceId);
   usePushNotification(deviceId);
+
+  // Polling fallback — fetch data terbaru setiap 3 detik
+  // Berjalan paralel dengan WebSocket, memastikan data selalu up to date
+  const { setSensorData } = useSensorStore();
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (!deviceId) return;
+
+    const poll = async () => {
+      try {
+        const res = await api.get(`/iot/sensors/latest?deviceId=${deviceId}`);
+        if (res.data?.data) setSensorData(res.data.data);
+      } catch {
+        // Gagal polling — WebSocket mungkin masih aktif, tidak masalah
+      }
+    };
+
+    // Poll pertama langsung
+    poll();
+
+    // Poll setiap 3 detik
+    pollRef.current = setInterval(poll, 3000);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [deviceId]);
 
   const tempVal  = data?.temperature !== undefined ? `${data.temperature}°C` : '—';
   const feedVal  = data?.feedLevel   !== undefined ? `${data.feedLevel}%`    : '—';
