@@ -107,26 +107,46 @@ export default function MonitoringScreen() {
 
   // Fetch data historis
   const fetchHistory = useCallback(async () => {
-    if (!deviceId) return;  // jangan fetch kalau deviceId belum ada
+    if (!deviceId) return;  // tunggu sampai deviceId tersedia
     setLoading(true);
     try {
       const fieldMap: Record<ChartTab, string> = {
         suhu: 'temperature', pakan: 'feed_level', ph: 'ph_level',
       };
-      const [histRes, statsRes] = await Promise.all([
-        api.get(`/iot/sensors/history?deviceId=${deviceId}&range=${range}&field=${fieldMap[activeChart]}`),
-        api.get(`/iot/sensors/stats?deviceId=${deviceId}&range=${range}`),
-      ]);
-      setHistory(histRes.data?.data ?? []);
+      const histRes = await api.get(
+        `/iot/sensors/history?deviceId=${deviceId}&range=${range}&field=${fieldMap[activeChart]}`
+      );
+      const histData: HistoryPoint[] = histRes.data?.data ?? [];
+      setHistory(histData);
 
-      // Konversi stats array ke object
-      const statsObj: Record<string, Stats> = {};
-      (statsRes.data?.data ?? []).forEach((s: any) => {
-        statsObj[s.field] = s;
-      });
-      setStats(statsObj);
-    } catch (err) {
-      console.log('⚠️ Fetch history error:', err);
+      // Hitung statistik dari data history (tidak perlu endpoint /stats terpisah)
+      if (histData.length > 0) {
+        const vals = histData.map(p =>
+          activeChart === 'suhu'  ? (p.temperature ?? 0)
+          : activeChart === 'pakan' ? (p.feedLevel ?? 0)
+          : (p.phLevel ?? 0)
+        ).filter(v => v > 0);
+
+        if (vals.length > 0) {
+          const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+          const min = Math.min(...vals);
+          const max = Math.max(...vals);
+          const last = vals[vals.length - 1];
+          const fieldKey = activeChart === 'suhu' ? 'temperature'
+            : activeChart === 'pakan' ? 'feed_level' : 'ph_level';
+          setStats(prev => ({
+            ...prev,
+            [fieldKey]: {
+              avg:  +avg.toFixed(2),
+              min:  +min.toFixed(2),
+              max:  +max.toFixed(2),
+              last: +last.toFixed(2),
+            },
+          }));
+        }
+      }
+    } catch (err: any) {
+      console.log('⚠️ Fetch history error:', err?.response?.status, err?.response?.data?.message);
     } finally {
       setLoading(false);
     }
