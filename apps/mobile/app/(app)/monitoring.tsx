@@ -107,7 +107,7 @@ export default function MonitoringScreen() {
 
   // Fetch data historis
   const fetchHistory = useCallback(async () => {
-    if (!deviceId) return;
+    if (!deviceId) return;  // jangan fetch kalau deviceId belum ada
     setLoading(true);
     try {
       const fieldMap: Record<ChartTab, string> = {
@@ -133,8 +133,8 @@ export default function MonitoringScreen() {
   }, [deviceId, range, activeChart]);
 
   useEffect(() => {
+    if (!deviceId) return;  // tunggu sampai deviceId tersedia
     fetchHistory();
-    // Auto-refresh setiap 30 detik
     const interval = setInterval(fetchHistory, 30_000);
     return () => clearInterval(interval);
   }, [fetchHistory]);
