@@ -3,71 +3,86 @@ import Fastify from 'fastify';
 import fastifyJwt from '@fastify/jwt';
 import fastifyCors from '@fastify/cors';
 import { FastifyRequest, FastifyReply } from 'fastify';
-import dbPlugin          from './plugins/db';
-import influxPlugin      from './plugins/influx';
-import socketPlugin      from './plugins/socket';
-import { authRoutes }    from './modules/auth/auth.routes';
-import { iotRoutes }     from './modules/iot/iot.routes';
-import { devicesRoutes } from './modules/devices/devices.routes';
-import { alertRoutes }   from './modules/alerts/alert.routes';
-import { chatRoutes }    from './modules/chat/chat.routes';
-import { startMqttBridge } from './modules/iot/mqtt.bridge';
+
+import dbPlugin                  from './plugins/db';
+import influxPlugin              from './plugins/influx';
+import socketPlugin              from './plugins/socket';
+import { authRoutes }            from './modules/auth/auth.routes';
+import { iotRoutes }             from './modules/iot/iot.routes';
+import { devicesRoutes }         from './modules/devices/devices.routes';
+import { alertRoutes }           from './modules/alerts/alert.routes';
+import { chatRoutes }            from './modules/chat/chat.routes';
+import { schedulesRoutes }       from './modules/schedules/schedules.routes';
+import { recommendationRoutes }  from './modules/recommendation/recommendation.routes';
+import { startMqttBridge }       from './modules/iot/mqtt.bridge';
 
 declare module 'fastify' {
-  interface FastifyInstance { authenticate: (req: FastifyRequest, reply: FastifyReply) => Promise<void>; }
+  interface FastifyInstance {
+    authenticate: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
+  }
 }
 
 async function buildApp() {
   const fastify = Fastify({
     logger: {
       level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-      transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty', options: { colorize: true } } : undefined,
+      transport: process.env.NODE_ENV !== 'production'
+        ? { target: 'pino-pretty', options: { colorize: true } }
+        : undefined,
     },
   });
 
-  // 🔍 Cek environment variables penting
-  if (!process.env.JWT_SECRET) fastify.log.warn('⚠️ JWT_SECRET tidak diset!');
-  if (!process.env.DATABASE_URL) fastify.log.warn('⚠️ DATABASE_URL tidak diset!');
-  if (!process.env.GROQ_API_KEY) fastify.log.warn('⚠️ GROQ_API_KEY tidak diset!');
-  else fastify.log.info('✅ GROQ_API_KEY tersedia');
+  await fastify.register(fastifyCors, {
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
 
-  await fastify.register(fastifyCors, { origin: '*', methods: ['GET','POST','PUT','PATCH','DELETE','OPTIONS'], allowedHeaders: ['Content-Type','Authorization'] });
-  await fastify.register(fastifyJwt as any, { secret: process.env.JWT_SECRET!, sign: { issuer: 'ecosmart-feeder', audience: 'ecosmart-app' }, verify: { issuer: 'ecosmart-feeder', audience: 'ecosmart-app' } });
+  await fastify.register(fastifyJwt as any, {
+    secret: process.env.JWT_SECRET!,
+    sign:   { issuer: 'ecosmart-feeder', audience: 'ecosmart-app' },
+    verify: { issuer: 'ecosmart-feeder', audience: 'ecosmart-app' },
+  });
+
   await fastify.register(dbPlugin);
   await fastify.register(influxPlugin);
   await fastify.register(socketPlugin);
+
   fastify.decorate('authenticate', async (req: FastifyRequest, reply: FastifyReply) => {
-    try { await req.jwtVerify(); }
-    catch { return reply.status(401).send({ success: false, error: 'Token tidak valid atau expired.' }); }
-  });
-  await fastify.register(authRoutes,    { prefix: '/api/auth'    });
-  await fastify.register(iotRoutes,     { prefix: '/api/iot'     });
-  await fastify.register(devicesRoutes, { prefix: '/api/devices' });
-  await fastify.register(alertRoutes,   { prefix: '/api/alerts'  });
-  await fastify.register(chatRoutes,    { prefix: '/api/chat'    });
-  
-  // Route root (/)
-  fastify.get('/', async () => ({
-    message: 'EcoSmart Feeder API is running',
-    version: '5.0.0',
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    endpoints: {
-      health: '/health',
-      auth: '/api/auth',
-      iot: '/api/iot',
-      devices: '/api/devices',
-      alerts: '/api/alerts',
-      chat: '/api/chat'
+    try {
+      await req.jwtVerify();
+    } catch {
+      return reply.status(401).send({
+        success: false,
+        error: 'Token tidak valid atau expired. Silakan login ulang.',
+      });
     }
+  });
+
+  // ── Routes ────────────────────────────────────────────────────────────────
+  await fastify.register(authRoutes,           { prefix: '/api/auth'           });
+  await fastify.register(iotRoutes,            { prefix: '/api/iot'            });
+  await fastify.register(devicesRoutes,        { prefix: '/api/devices'        });
+  await fastify.register(alertRoutes,          { prefix: '/api/alerts'         });
+  await fastify.register(chatRoutes,           { prefix: '/api/chat'           });
+  await fastify.register(schedulesRoutes,      { prefix: '/api/schedules'      });
+  await fastify.register(recommendationRoutes, { prefix: '/api/recommendation' });
+
+  fastify.get('/health', async () => ({
+    status:    'ok',
+    timestamp: new Date().toISOString(),
+    service:   'EcoSmart Feeder API',
+    version:   '6.0.0',
   }));
-  
-  fastify.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString(), service: 'EcoSmart Feeder API', version: '5.0.0' }));
+
   fastify.setErrorHandler((error, _req, reply) => {
     fastify.log.error(error);
-    if ((error as any).statusCode) return reply.status((error as any).statusCode).send({ success: false, error: error.message });
+    if ((error as any).statusCode) {
+      return reply.status((error as any).statusCode).send({ success: false, error: error.message });
+    }
     return reply.status(500).send({ success: false, error: 'Terjadi kesalahan pada server.' });
   });
+
   return fastify;
 }
 
@@ -77,13 +92,16 @@ async function start() {
   try {
     await startMqttBridge(app);
     await app.listen({ port, host: '0.0.0.0' });
-    console.log(`\n🚀 EcoSmart API  →  http://localhost:${port}`);
-    console.log(`❤️  Health        →  http://localhost:${port}/health`);
-    console.log(`🔌 WebSocket     →  ws://localhost:${port}`);
-    console.log(`🤖 AI Chat       →  POST http://localhost:${port}/api/chat/message\n`);
+    console.log(`\n🚀 EcoSmart API       →  http://localhost:${port}`);
+    console.log(`❤️  Health check       →  http://localhost:${port}/health`);
+    console.log(`🔌 WebSocket          →  ws://localhost:${port}`);
+    console.log(`📅 Schedules          →  http://localhost:${port}/api/schedules`);
+    console.log(`🤖 AI Chat            →  POST http://localhost:${port}/api/chat/message`);
+    console.log(`🌿 Recommendation     →  POST http://localhost:${port}/api/recommendation/predict\n`);
   } catch (err) {
     app.log.error(err);
     process.exit(1);
   }
 }
+
 start();

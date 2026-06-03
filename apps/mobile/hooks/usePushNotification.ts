@@ -37,7 +37,9 @@ async function registerForPushNotifications(deviceId: string) {
     });
   }
   try {
-    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId: 'ecosmart-feeder' });
+    const tokenData = await Notifications.getExpoPushTokenAsync({
+      projectId: '94eb9e5f-0d12-4abf-8e33-c0354f286463',
+    });
     console.log('📲 Push Token:', tokenData.data);
     await api.post('/alerts/push-token', { pushToken: tokenData.data, deviceId });
     console.log('✅ Push token registered');
