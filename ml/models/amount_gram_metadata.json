@@ -1,9 +1,6 @@
 {
-  "model_name": "Gradient Boosting",
   "target": "amount_gram",
-  "accuracy": 0.8625,
-  "cv_mean": 0.866,
-  "cv_std": 0.0159,
+  "best_model": "Gradient Boosting",
   "features": [
     "temperature",
     "ph_level",
@@ -17,14 +14,9 @@
     "2": "150g",
     "3": "200g"
   },
-  "feature_importance": {
-    "temperature": 0.2768,
-    "ph_level": 0.2329,
-    "feed_level": 0.1973,
-    "light_level": 0.2717,
-    "hour": 0.0213
-  },
-  "best_model": "Gradient Boosting",
+  "accuracy": 0.8625,
+  "cv_accuracy_mean": 0.866,
+  "cv_accuracy_std": 0.0159,
   "all_results": {
     "Decision Tree": {
       "accuracy": 0.71,
@@ -41,5 +33,12 @@
       "cv_mean": 0.866,
       "cv_std": 0.0159
     }
+  },
+  "feature_importance": {
+    "temperature": 0.2768,
+    "ph_level": 0.2329,
+    "feed_level": 0.1973,
+    "light_level": 0.2717,
+    "hour": 0.0213
   }
 }

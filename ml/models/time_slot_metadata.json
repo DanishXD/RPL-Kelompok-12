@@ -1,9 +1,6 @@
 {
-  "model_name": "Gradient Boosting",
   "target": "time_slot",
-  "accuracy": 0.855,
-  "cv_mean": 0.8635,
-  "cv_std": 0.0115,
+  "best_model": "Gradient Boosting",
   "features": [
     "temperature",
     "ph_level",
@@ -15,16 +12,11 @@
     "0": "Pagi (06-08)",
     "1": "Siang (12-13)",
     "2": "Sore (17-18)",
-    "3": "Tidak Direkomendasikan"
+    "3": "Tidak Rek."
   },
-  "feature_importance": {
-    "temperature": 0.3223,
-    "ph_level": 0.0904,
-    "feed_level": 0.0575,
-    "light_level": 0.052,
-    "hour": 0.4779
-  },
-  "best_model": "Gradient Boosting",
+  "accuracy": 0.855,
+  "cv_accuracy_mean": 0.8635,
+  "cv_accuracy_std": 0.0115,
   "all_results": {
     "Decision Tree": {
       "accuracy": 0.7925,
@@ -41,5 +33,12 @@
       "cv_mean": 0.8635,
       "cv_std": 0.0115
     }
+  },
+  "feature_importance": {
+    "temperature": 0.3223,
+    "ph_level": 0.0904,
+    "feed_level": 0.0575,
+    "light_level": 0.052,
+    "hour": 0.4779
   }
 }
