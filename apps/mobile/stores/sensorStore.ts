@@ -41,6 +41,8 @@ export const useSensorStore = create<SensorState>((set) => ({
   setSensorData: (data) => {
     // Cek threshold dari store saat data sensor baru masuk
     const config = useThresholdStore.getState().config;
+    console.log('🌡️ Threshold aktif:', config.tempMin, '-', config.tempMax, '°C | pH:', config.phMin, '-', config.phMax, '| Pakan min:', config.feedMin);
+    console.log('📡 Sensor masuk:', data.temperature, '°C | pH:', data.phLevel, '| Pakan:', data.feedLevel, '%');
     const triggered: AlertData['alerts'] = [];
 
     (['temperature', 'phLevel', 'feedLevel'] as const).forEach(field => {
@@ -48,6 +50,7 @@ export const useSensorStore = create<SensorState>((set) => ({
       if (value === undefined) return;
       const result = checkThreshold(field, value, config);
       if (result.triggered && result.status) {
+        console.log(`🚨 Triggered: ${field} = ${value} (${result.status})`);
         triggered.push({ field, value, status: result.status });
       }
     });
@@ -88,16 +91,32 @@ export const useSensorStore = create<SensorState>((set) => ({
 
   addAlert: (alert) => {
     const config = useThresholdStore.getState().config;
+    console.log('📨 addAlert dipanggil dari WebSocket:', JSON.stringify(alert.alerts));
 
-    const messages = alert.alerts.map((a) => {
+    // Filter hanya alert yang benar-benar melewati threshold user
+    const filtered = alert.alerts.filter(a => {
+      const result = checkThreshold(
+        a.field as 'temperature' | 'phLevel' | 'feedLevel',
+        a.value,
+        config
+      );
+      return result.triggered;
+    });
+
+    // Kalau tidak ada yang melewati threshold user, abaikan
+    if (filtered.length === 0) {
+      console.log('✅ Alert diabaikan — tidak melewati threshold user');
+      return;
+    }
+
+    const messages = filtered.map((a) => {
       const label = a.field === 'temperature' ? 'Suhu'
         : a.field === 'phLevel' ? 'pH Air' : 'Level Pakan';
       const dir = a.status === 'high' ? 'terlalu tinggi' : 'terlalu rendah';
       return `${label} ${dir} (${a.value})`;
     });
 
-    // Kritis kalau melewati threshold lebih dari 20% dari batas
-    const isCritical = alert.alerts.some(a =>
+    const isCritical = filtered.some(a =>
       (a.field === 'feedLevel'   && a.value < config.feedMin * 0.5) ||
       (a.field === 'temperature' && (a.value > config.tempMax + 4 || a.value < config.tempMin - 4)) ||
       (a.field === 'phLevel'     && (a.value > config.phMax + 1   || a.value < config.phMin - 1))
@@ -108,7 +127,8 @@ export const useSensorStore = create<SensorState>((set) => ({
       messages.join(', ')
     );
 
-    set((s) => ({ alerts: [alert, ...s.alerts].slice(0, 20) }));
+    const filteredAlert: AlertData = { ...alert, alerts: filtered };
+    set((s) => ({ alerts: [filteredAlert, ...s.alerts].slice(0, 20) }));
   },
 
   dismissAlert:    (index) => set((s) => ({ alerts: s.alerts.filter((_, i) => i !== index) })),

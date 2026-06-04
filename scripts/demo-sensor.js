@@ -27,7 +27,7 @@ function generateSensorData() {
 
   const temperature = +(26 + 3 * Math.sin(iteration * 0.3) + (Math.random() - 0.5)).toFixed(1);
   const phLevel     = +(7.1 + 0.4 * Math.sin(iteration * 0.15) + (Math.random() - 0.5) * 0.2).toFixed(2);
-  const feedLevel   = +(Math.max(5, 80 - (iteration % 60) + (Math.random() - 0.5) * 2)).toFixed(1);
+  const feedLevel   = +(Math.max(45, 95 - (iteration % 100) + (Math.random() - 0.5) * 2)).toFixed(1);
   const hour        = (Math.floor(iteration / 12)) % 24;
   const isDay       = hour >= 6 && hour <= 18;
   const lightLevel  = Math.round(isDay
