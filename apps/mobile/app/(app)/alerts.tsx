@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, TextInput, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import AIChatFAB from '../../components/AIChatFAB';
 import { useSensorStore } from '../../stores/sensorStore';
+import { useThresholdStore } from '../../stores/thresholdStore';
 import { Colors } from '../../constants/colors';
 
 const HISTORY = [
@@ -12,14 +14,40 @@ const HISTORY = [
 
 export default function AlertsScreen() {
   const { alerts, dismissAlert } = useSensorStore();
-  const [tMax, setTMax] = useState('30');
-  const [tMin, setTMin] = useState('18');
-  const [fMin, setFMin] = useState('20');
+  const { config, setConfig, loadConfig } = useThresholdStore();
+
+  const [tMax, setTMax] = useState(String(config.tempMax));
+  const [tMin, setTMin] = useState(String(config.tempMin));
+  const [fMin, setFMin] = useState(String(config.feedMin));
+  const [phMax, setPhMax] = useState(String(config.phMax));
+  const [phMin, setPhMin] = useState(String(config.phMin));
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
+  // Load threshold tersimpan saat pertama buka
+  useEffect(() => {
+    loadConfig();
+  }, []);
+
+  // Sync input saat config berubah (misal setelah load)
+  useEffect(() => {
+    setTMax(String(config.tempMax));
+    setTMin(String(config.tempMin));
+    setFMin(String(config.feedMin));
+    setPhMax(String(config.phMax));
+    setPhMin(String(config.phMin));
+  }, [config]);
+
+  const handleSave = async () => {
+    const newConfig = {
+      tempMax: parseFloat(tMax)  || 32,
+      tempMin: parseFloat(tMin)  || 24,
+      feedMin: parseFloat(fMin)  || 20,
+      phMax:   parseFloat(phMax) || 8.5,
+      phMin:   parseFloat(phMin) || 6.5,
+    };
+    await setConfig(newConfig);
     setSaved(true);
-    Alert.alert('✅ Tersimpan', 'Pengaturan threshold berhasil disimpan.');
+    Alert.alert('✅ Tersimpan', 'Threshold berhasil disimpan. Alert akan menggunakan nilai baru ini.');
     setTimeout(() => setSaved(false), 2000);
   };
 
@@ -60,12 +88,18 @@ export default function AlertsScreen() {
 
         <Text style={styles.sectionTitle}>Pengaturan Threshold</Text>
         <View style={styles.threshCard}>
-          {[{label:'Suhu Maksimum',val:tMax,set:setTMax,unit:'°C'},{label:'Suhu Minimum',val:tMin,set:setTMin,unit:'°C'},{label:'Level Pakan Minimum',val:fMin,set:setFMin,unit:'%'}].map((item,i,arr) => (
+          {[
+            { label:'Suhu Maksimum',       val:tMax,  set:setTMax,  unit:'°C' },
+            { label:'Suhu Minimum',        val:tMin,  set:setTMin,  unit:'°C' },
+            { label:'pH Maksimum',         val:phMax, set:setPhMax, unit:''   },
+            { label:'pH Minimum',          val:phMin, set:setPhMin, unit:''   },
+            { label:'Level Pakan Minimum', val:fMin,  set:setFMin,  unit:'%'  },
+          ].map((item,i,arr) => (
             <React.Fragment key={item.label}>
               <View style={styles.threshRow}>
                 <Text style={styles.threshLabel}>{item.label}</Text>
                 <View style={styles.threshInputRow}>
-                  <TextInput style={styles.threshInput} value={item.val} onChangeText={item.set} keyboardType="numeric" maxLength={3} />
+                  <TextInput style={styles.threshInput} value={item.val} onChangeText={item.set} keyboardType="numeric" maxLength={5} />
                   <Text style={styles.threshUnit}>{item.unit}</Text>
                 </View>
               </View>

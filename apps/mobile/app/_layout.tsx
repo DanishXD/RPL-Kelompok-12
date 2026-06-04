@@ -3,15 +3,37 @@ import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
 import { useAuthStore } from '../stores/authStore';
+import { useThresholdStore } from '../stores/thresholdStore';
 import { Colors } from '../constants/colors';
+
 export default function RootLayout() {
   const { isAuthenticated, isLoading, loadFromStorage } = useAuthStore();
-  useEffect(() => { loadFromStorage(); }, []);
+  const { loadConfig } = useThresholdStore();
+
+  useEffect(() => {
+    loadFromStorage();
+    loadConfig(); // load threshold tersimpan saat app buka
+  }, []);
+
   useEffect(() => {
     if (isLoading) return;
     if (isAuthenticated) router.replace('/(app)/dashboard');
     else router.replace('/(auth)/login');
   }, [isAuthenticated, isLoading]);
-  if (isLoading) return <View style={{ flex:1, alignItems:'center', justifyContent:'center', backgroundColor:Colors.bgPage }}><ActivityIndicator size="large" color={Colors.primary} /></View>;
-  return (<><StatusBar style="light" /><Stack screenOptions={{ headerShown:false }}><Stack.Screen name="(auth)" /><Stack.Screen name="(app)" /></Stack></>);
+
+  if (isLoading) return (
+    <View style={{ flex:1, alignItems:'center', justifyContent:'center', backgroundColor:Colors.bgPage }}>
+      <ActivityIndicator size="large" color={Colors.primary} />
+    </View>
+  );
+
+  return (
+    <>
+      <StatusBar style="light" />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(app)"  />
+      </Stack>
+    </>
+  );
 }
