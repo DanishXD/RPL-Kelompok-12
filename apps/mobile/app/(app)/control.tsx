@@ -8,6 +8,7 @@ import * as SecureStore from 'expo-secure-store';
 import ScreenHeader from '../../components/ScreenHeader';
 import AIChatFAB from '../../components/AIChatFAB';
 import { useSensorStore } from '../../stores/sensorStore';
+import { useScheduleStore } from '../../stores/scheduleStore';
 import { DEVICE_KEYS } from './setup-device';
 import api from '../../lib/api';
 import { Colors } from '../../constants/colors';
@@ -297,6 +298,7 @@ function ScheduleModal({ visible, onClose, onSave, editData }: ScheduleModalProp
 
 export default function ControlScreen() {
   const { data } = useSensorStore();
+  const { setSchedules: syncToStore } = useScheduleStore();
 
   const [deviceId,     setDeviceId]     = useState<string | null>(null);
   const [schedules,    setSchedules]    = useState<Schedule[]>([]);
@@ -324,35 +326,49 @@ export default function ControlScreen() {
     try {
       const { data: res } = await api.get(`/schedules?deviceId=${id}`);
       setSchedules(res.data);
+      syncToStore(res.data); // sync ke global store
     } catch {
-      // fallback ke dummy kalau API belum di-migrate
-      setSchedules([
+      const fallback = [
         { id: '1', time: '07:00', amount: '100g', days: ['everyday'],              isActive: true  },
         { id: '2', time: '12:00', amount: '120g', days: ['everyday'],              isActive: true  },
         { id: '3', time: '18:00', amount: '150g', days: ['monday','wednesday','friday'], isActive: false },
-      ]);
+      ];
+      setSchedules(fallback);
+      syncToStore(fallback);
     } finally {
       setLoadingSched(false);
     }
-  }, []);
+  }, [syncToStore]);
 
   const handleAddSchedule = async (data: Omit<Schedule, 'id'>) => {
     if (!deviceId) throw new Error('Device belum terhubung');
     const { data: res } = await api.post('/schedules', { deviceId, ...data });
-    setSchedules(prev => [...prev, res.data].sort((a, b) => a.time.localeCompare(b.time)));
+    setSchedules(prev => {
+      const updated = [...prev, res.data].sort((a, b) => a.time.localeCompare(b.time));
+      syncToStore(updated);
+      return updated;
+    });
   };
 
   const handleEditSchedule = async (data: Omit<Schedule, 'id'>) => {
     if (!editSchedule) return;
     const { data: res } = await api.patch(`/schedules/${editSchedule.id}`, data);
-    setSchedules(prev => prev.map(s => s.id === editSchedule.id ? res.data : s));
+    setSchedules(prev => {
+      const updated = prev.map(s => s.id === editSchedule.id ? res.data : s);
+      syncToStore(updated);
+      return updated;
+    });
     setEditSchedule(null);
   };
 
   const handleToggleSchedule = async (schedule: Schedule) => {
     try {
       await api.patch(`/schedules/${schedule.id}`, { isActive: !schedule.isActive });
-      setSchedules(prev => prev.map(s => s.id === schedule.id ? { ...s, isActive: !s.isActive } : s));
+      setSchedules(prev => {
+        const updated = prev.map(s => s.id === schedule.id ? { ...s, isActive: !s.isActive } : s);
+        syncToStore(updated);
+        return updated;
+      });
     } catch { Alert.alert('Error', 'Gagal mengubah status jadwal'); }
   };
 
@@ -364,7 +380,11 @@ export default function ControlScreen() {
         onPress: async () => {
           try {
             await api.delete(`/schedules/${schedule.id}`);
-            setSchedules(prev => prev.filter(s => s.id !== schedule.id));
+            setSchedules(prev => {
+              const updated = prev.filter(s => s.id !== schedule.id);
+              syncToStore(updated);
+              return updated;
+            });
           } catch { Alert.alert('Error', 'Gagal menghapus jadwal'); }
         },
       },

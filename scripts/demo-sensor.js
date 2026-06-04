@@ -64,7 +64,7 @@ async function sendSensorData() {
 
     if (CONFIG.DEVICE_TOKEN) {
       // Pakai /iot/ingest — lebih lengkap, simpan ke InfluxDB
-      res  = await fetch(`${CONFIG.BASE_URL}/iot/ingest`, {
+      res = await fetch(`${CONFIG.BASE_URL}/iot/ingest`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
@@ -72,6 +72,7 @@ async function sendSensorData() {
           deviceToken: CONFIG.DEVICE_TOKEN,
           ...sensor,
         }),
+        signal: AbortSignal.timeout(8000), // timeout 8 detik
       });
     } else {
       // Fallback ke /iot/test-alert — butuh token login
@@ -81,7 +82,8 @@ async function sendSensorData() {
           'Content-Type': 'application/json',
           Authorization:  `Bearer ${token}`,
         },
-        body: JSON.stringify({ deviceId: CONFIG.DEVICE_ID, ...sensor }),
+        body:   JSON.stringify({ deviceId: CONFIG.DEVICE_ID, ...sensor }),
+        signal: AbortSignal.timeout(8000), // timeout 8 detik
       });
     }
 
@@ -119,8 +121,14 @@ async function main() {
 
   if (!CONFIG.DEVICE_TOKEN) await login();
 
-  await sendSensorData();
-  setInterval(sendSensorData, CONFIG.INTERVAL);
+  // Pakai rekursif setTimeout — request berikutnya baru dikirim
+  // setelah yang sebelumnya selesai, tidak akan numpuk/stuck
+  const loop = async () => {
+    await sendSensorData();
+    setTimeout(loop, CONFIG.INTERVAL);
+  };
+
+  loop();
 }
 
 main().catch(err => {

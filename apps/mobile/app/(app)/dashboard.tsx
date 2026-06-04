@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useSensorStore } from '../../stores/sensorStore';
+import { useScheduleStore, getNextSchedule } from '../../stores/scheduleStore';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { usePushNotification } from '../../hooks/usePushNotification';
 import { useAuthStore } from '../../stores/authStore';
@@ -38,6 +39,8 @@ function getPhStatus(p?: number): 'normal'|'warning'|'danger' {
 export default function DashboardScreen() {
   const { user } = useAuthStore();
   const { data, isConnected, lastUpdated, alerts } = useSensorStore();
+  const { schedules } = useScheduleStore();
+  const nextSchedule = getNextSchedule(schedules);
 
   // Baca deviceId dari SecureStore — tidak perlu hardcode lagi!
   const [deviceId,   setDeviceId]   = useState<string | null>(null);
@@ -214,15 +217,33 @@ export default function DashboardScreen() {
           </View>
 
           {/* Next Schedule */}
-          <View style={styles.nextCard}>
+          <TouchableOpacity
+            style={styles.nextCard}
+            onPress={() => router.push('/(app)/control')}
+            activeOpacity={0.8}
+          >
             <View>
               <Text style={styles.nextLabel}>JADWAL BERIKUTNYA</Text>
-              <Text style={styles.nextTime}>18:00 — 150g</Text>
+              {nextSchedule ? (
+                <Text style={styles.nextTime}>
+                  {nextSchedule.time} — {nextSchedule.amount}
+                </Text>
+              ) : (
+                <Text style={[styles.nextTime, { fontSize: 16, color: Colors.textMuted }]}>
+                  Belum ada jadwal aktif
+                </Text>
+              )}
             </View>
-            <View style={styles.activeBadge}>
-              <Text style={styles.activeBadgeText}>Aktif</Text>
-            </View>
-          </View>
+            {nextSchedule ? (
+              <View style={styles.activeBadge}>
+                <Text style={styles.activeBadgeText}>Aktif</Text>
+              </View>
+            ) : (
+              <View style={[styles.activeBadge, { borderColor: Colors.textMuted }]}>
+                <Text style={[styles.activeBadgeText, { color: Colors.textMuted }]}>Set Jadwal</Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
         </View>
       </ScrollView>
