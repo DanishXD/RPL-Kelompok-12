@@ -24,9 +24,9 @@ export class AlertEngine {
       if (value < rule.min) triggered.push({ deviceId, field: rule.field, value, status: 'low',  threshold: { min: rule.min, max: rule.max } });
       if (value > rule.max) triggered.push({ deviceId, field: rule.field, value, status: 'high', threshold: { min: rule.min, max: rule.max } });
     }
-    if (triggered.length > 0) {
-      this.fastify.io.to(`device:${deviceId}`).emit(SOCKET_EVENTS.ALERT_TRIGGERED, { deviceId, alerts: triggered, timestamp: new Date().toISOString() });
-    }
+    // Tidak emit alert:triggered dari backend — threshold dikontrol dari app
+    // agar user bisa set threshold sendiri di halaman Alert
+    this.fastify.log.debug({ triggered, deviceId }, 'Alert check (handled by app)');
     return triggered;
   }
 

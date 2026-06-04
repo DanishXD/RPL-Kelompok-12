@@ -25,12 +25,6 @@ let iteration = 0;
 function generateSensorData() {
   iteration++;
 
-  // Setiap 30 iterasi, kirim nilai ekstrem untuk trigger alert & notifikasi
-  if (iteration % 30 === 0) {
-    console.log('🚨 Mengirim nilai ekstrem untuk trigger alert...');
-    return { temperature: 35, phLevel: 9.2, feedLevel: 8, lightLevel: 100 };
-  }
-
   const temperature = +(26 + 3 * Math.sin(iteration * 0.3) + (Math.random() - 0.5)).toFixed(1);
   const phLevel     = +(7.1 + 0.4 * Math.sin(iteration * 0.15) + (Math.random() - 0.5) * 0.2).toFixed(2);
   const feedLevel   = +(Math.max(5, 80 - (iteration % 60) + (Math.random() - 0.5) * 2)).toFixed(1);
