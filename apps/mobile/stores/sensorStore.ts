@@ -87,23 +87,22 @@ export const useSensorStore = create<SensorState>((set) => ({
   },
 
   addAlert: (alert) => {
-    // Buat pesan notifikasi dari data alert
+    const config = useThresholdStore.getState().config;
+
     const messages = alert.alerts.map((a) => {
-      const label =
-        a.field === 'temperature' ? 'Suhu'
-        : a.field === 'phLevel'   ? 'pH Air'
-        : 'Level Pakan';
+      const label = a.field === 'temperature' ? 'Suhu'
+        : a.field === 'phLevel' ? 'pH Air' : 'Level Pakan';
       const dir = a.status === 'high' ? 'terlalu tinggi' : 'terlalu rendah';
       return `${label} ${dir} (${a.value})`;
     });
 
-    const isCritical = alert.alerts.some(
-      (a) =>
-        (a.field === 'feedLevel'   && a.value < 10) ||
-        (a.field === 'temperature' && (a.value > 34 || a.value < 22))
+    // Kritis kalau melewati threshold lebih dari 20% dari batas
+    const isCritical = alert.alerts.some(a =>
+      (a.field === 'feedLevel'   && a.value < config.feedMin * 0.5) ||
+      (a.field === 'temperature' && (a.value > config.tempMax + 4 || a.value < config.tempMin - 4)) ||
+      (a.field === 'phLevel'     && (a.value > config.phMax + 1   || a.value < config.phMin - 1))
     );
 
-    // Trigger local notification
     sendLocalNotification(
       isCritical ? '🚨 Alert Kritis EcoSmart' : '⚠️ Peringatan EcoSmart',
       messages.join(', ')
