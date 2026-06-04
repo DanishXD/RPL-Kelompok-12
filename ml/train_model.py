@@ -188,6 +188,29 @@ def run_comparison(X, y, target_name, class_labels):
         plt.close()
         print(f"  ✅ Saved: reports/{target_name}_feature_importance.png")
 
+    # ── 4. Decision Tree plot (visualisasi pohon) ─────────────────────────────
+    dt_model = trained.get('Decision Tree')
+    if dt_model is not None:
+        fig, ax = plt.subplots(figsize=(22, 10))
+        from sklearn.tree import plot_tree as sklearn_plot_tree
+        sklearn_plot_tree(
+            dt_model,
+            feature_names=FEATURES,
+            class_names=[class_labels[i] for i in sorted(class_labels.keys())],
+            filled=True, rounded=True, fontsize=8, ax=ax, max_depth=3,
+            impurity=False, proportion=False
+        )
+        dt_acc = results['Decision Tree']['accuracy']
+        ax.set_title(
+            f'Decision Tree — {target_name}  (max depth ditampilkan: 3 dari 6)\n'
+            f'Accuracy: {dt_acc*100:.2f}%',
+            fontsize=13, fontweight='bold', color=MODEL_COLORS['Decision Tree']
+        )
+        plt.tight_layout()
+        plt.savefig(f'reports/{target_name}_decision_tree_plot.png', dpi=150, bbox_inches='tight')
+        plt.close()
+        print(f"  ✅ Saved: reports/{target_name}_decision_tree_plot.png")
+
     # ── Pilih & simpan model terbaik ──────────────────────────────────────────
     best_model  = trained[best_name]
     best_result = results[best_name]
