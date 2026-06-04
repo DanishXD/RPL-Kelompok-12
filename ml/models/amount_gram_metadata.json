@@ -1,5 +1,9 @@
 {
+  "model_name": "Gradient Boosting",
   "target": "amount_gram",
+  "accuracy": 0.8625,
+  "cv_mean": 0.866,
+  "cv_std": 0.0159,
   "features": [
     "temperature",
     "ph_level",
@@ -13,17 +17,29 @@
     "2": "150g",
     "3": "200g"
   },
-  "accuracy": 0.71,
-  "cv_accuracy_mean": 0.715,
-  "cv_accuracy_std": 0.0122,
-  "max_depth": 6,
-  "n_train": 1600,
-  "n_test": 400,
   "feature_importance": {
-    "temperature": 0.309,
-    "ph_level": 0.3091,
-    "feed_level": 0.1583,
-    "light_level": 0.2146,
-    "hour": 0.009
+    "temperature": 0.2768,
+    "ph_level": 0.2329,
+    "feed_level": 0.1973,
+    "light_level": 0.2717,
+    "hour": 0.0213
+  },
+  "best_model": "Gradient Boosting",
+  "all_results": {
+    "Decision Tree": {
+      "accuracy": 0.71,
+      "cv_mean": 0.715,
+      "cv_std": 0.0122
+    },
+    "Random Forest": {
+      "accuracy": 0.7975,
+      "cv_mean": 0.8165,
+      "cv_std": 0.018
+    },
+    "Gradient Boosting": {
+      "accuracy": 0.8625,
+      "cv_mean": 0.866,
+      "cv_std": 0.0159
+    }
   }
 }

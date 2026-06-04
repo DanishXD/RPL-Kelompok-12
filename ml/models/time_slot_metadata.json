@@ -1,5 +1,9 @@
 {
+  "model_name": "Gradient Boosting",
   "target": "time_slot",
+  "accuracy": 0.855,
+  "cv_mean": 0.8635,
+  "cv_std": 0.0115,
   "features": [
     "temperature",
     "ph_level",
@@ -13,17 +17,29 @@
     "2": "Sore (17-18)",
     "3": "Tidak Direkomendasikan"
   },
-  "accuracy": 0.7925,
-  "cv_accuracy_mean": 0.8085,
-  "cv_accuracy_std": 0.0138,
-  "max_depth": 6,
-  "n_train": 1600,
-  "n_test": 400,
   "feature_importance": {
-    "temperature": 0.3168,
-    "ph_level": 0.0376,
-    "feed_level": 0.0012,
-    "light_level": 0.0077,
-    "hour": 0.6366
+    "temperature": 0.3223,
+    "ph_level": 0.0904,
+    "feed_level": 0.0575,
+    "light_level": 0.052,
+    "hour": 0.4779
+  },
+  "best_model": "Gradient Boosting",
+  "all_results": {
+    "Decision Tree": {
+      "accuracy": 0.7925,
+      "cv_mean": 0.8085,
+      "cv_std": 0.0138
+    },
+    "Random Forest": {
+      "accuracy": 0.8025,
+      "cv_mean": 0.8265,
+      "cv_std": 0.0119
+    },
+    "Gradient Boosting": {
+      "accuracy": 0.855,
+      "cv_mean": 0.8635,
+      "cv_std": 0.0115
+    }
   }
 }
