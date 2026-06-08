@@ -28,6 +28,9 @@ from sklearn.metrics          import (
     classification_report, confusion_matrix,
     accuracy_score, f1_score, ConfusionMatrixDisplay
 )
+from sklearn.base             import clone
+from imblearn.over_sampling   import SMOTE
+from imblearn.pipeline        import Pipeline as ImbPipeline
 
 # ── Load dataset ──────────────────────────────────────────────────────────────
 
@@ -76,17 +79,64 @@ def run_comparison(X, y, target_name, class_labels):
         X, y, test_size=0.2, random_state=42, stratify=y
     )
 
+    # ── SMOTE: atasi ketidakseimbangan kelas ──────────────────────────────────
+    smote = SMOTE(random_state=42)
+    X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
+
+    dist_before  = pd.Series(y_train).value_counts().sort_index()
+    dist_after   = pd.Series(y_train_res).value_counts().sort_index()
+    label_names  = [class_labels[i] for i in sorted(class_labels.keys())]
+    before_counts = [int(dist_before.get(i, 0)) for i in sorted(class_labels.keys())]
+    after_counts  = [int(dist_after.get(i, 0))  for i in sorted(class_labels.keys())]
+
+    print(f"\n  Distribusi kelas training SEBELUM SMOTE:")
+    for i, (lbl, cnt) in enumerate(zip(label_names, before_counts)):
+        print(f"    {lbl:<20} {cnt:>5} ({cnt/len(y_train)*100:.1f}%)")
+    print(f"  Distribusi kelas training SESUDAH SMOTE:")
+    for i, (lbl, cnt) in enumerate(zip(label_names, after_counts)):
+        print(f"    {lbl:<20} {cnt:>5} ({cnt/len(y_train_res)*100:.1f}%)")
+
+    # Visualisasi distribusi sebelum & sesudah SMOTE
+    bar_colors = ['#2196F3', '#FF9800', '#4CAF50', '#9C27B0'][:len(label_names)]
+    fig, axes  = plt.subplots(1, 2, figsize=(14, 5))
+    fig.suptitle(f'Distribusi Kelas Sebelum vs Sesudah SMOTE — {target_name}',
+                 fontsize=13, fontweight='bold')
+    for ax, counts, title in zip(
+        axes,
+        [before_counts, after_counts],
+        ['Sebelum SMOTE (Training Set)', 'Sesudah SMOTE (Training Set)']
+    ):
+        bars  = ax.bar(label_names, counts, color=bar_colors, alpha=0.85)
+        ax.set_title(title, fontsize=11, fontweight='bold')
+        ax.set_ylabel('Jumlah Sampel')
+        ax.tick_params(axis='x', rotation=20)
+        ax.grid(axis='y', alpha=0.3)
+        total = sum(counts)
+        for bar, count in zip(bars, counts):
+            ax.annotate(f'{count}\n({count/total*100:.1f}%)',
+                        xy=(bar.get_x() + bar.get_width() / 2, bar.get_height()),
+                        xytext=(0, 4), textcoords='offset points',
+                        ha='center', fontsize=9)
+    plt.tight_layout()
+    plt.savefig(f'reports/{target_name}_smote_distribution.png', dpi=150, bbox_inches='tight')
+    plt.close()
+    print(f"  Saved: reports/{target_name}_smote_distribution.png")
+
     results  = {}
     trained  = {}
     cm_data  = {}
 
-    for name, model in MODELS.items():
-        model.fit(X_train, y_train)
+    for name, clf in MODELS.items():
+        # Latih pada data hasil SMOTE, evaluasi pada test set asli
+        model = clone(clf)
+        model.fit(X_train_res, y_train_res)
         y_pred    = model.predict(X_test)
         acc       = accuracy_score(y_test, y_pred)
         f1        = f1_score(y_test, y_pred, average='weighted', zero_division=0)
-        cv_scores = cross_val_score(model, X, y, cv=5, scoring='accuracy')
-        cv_f1     = cross_val_score(model, X, y, cv=5, scoring='f1_weighted')
+        # CV dengan SMOTE di dalam setiap fold (mencegah data leakage)
+        cv_pipe   = ImbPipeline([('smote', SMOTE(random_state=42)), ('clf', clone(clf))])
+        cv_scores = cross_val_score(cv_pipe, X, y, cv=5, scoring='accuracy')
+        cv_f1     = cross_val_score(cv_pipe, X, y, cv=5, scoring='f1_weighted')
 
         results[name] = {
             'accuracy':    round(acc, 4),

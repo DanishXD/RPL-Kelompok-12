@@ -110,24 +110,21 @@ Distribusi kelas jumlah pakan menunjukkan 150g (46.6%) paling sering direkomenda
 
 ### Target: Waktu Pakan (time_slot)
 
-| Model | Test Accuracy | CV Accuracy | CV Std Dev | Test F1 (weighted) | CV F1 (weighted) |
-|---|---|---|---|---|---|
-| Decision Tree | 79.25% | 80.85% | ±1.38% | 79.83% | 80.59% |
-| Random Forest | 80.25% | 82.65% | ±1.19% | 76.35% | 79.69% |
-| **Gradient Boosting** | **85.50%** | **86.35%** | ±1.15% | **84.57%** | **85.72%** |
+| Model | Test Accuracy | CV Accuracy | CV Std Dev |
+|---|---|---|---|
+| Decision Tree | 79.25% | 80.85% | ±1.38% |
+| Random Forest | 80.25% | 82.65% | ±1.19% |
+| **Gradient Boosting** | **85.50%** | **86.35%** | ±1.15% |
 
 ### Target: Jumlah Pakan (amount_gram)
 
-| Model | Test Accuracy | CV Accuracy | CV Std Dev | Test F1 (weighted) | CV F1 (weighted) |
-|---|---|---|---|---|---|
-| Decision Tree | 71.00% | 71.50% | ±1.22% | 70.16% | 70.72% |
-| Random Forest | 79.75% | 81.65% | ±1.80% | 78.06% | 80.11% |
-| **Gradient Boosting** | **86.25%** | **86.60%** | ±1.59% | **85.54%** | **85.84%** |
+| Model | Test Accuracy | CV Accuracy | CV Std Dev |
+|---|---|---|---|
+| Decision Tree | 71.00% | 71.50% | ±1.22% |
+| Random Forest | 79.75% | 81.65% | ±1.80% |
+| **Gradient Boosting** | **86.25%** | **86.60%** | ±1.59% |
 
-**Metode evaluasi:**
-- **Accuracy** — persentase prediksi benar dari seluruh sampel.
-- **F1 Score (weighted)** — rata-rata F1 per kelas yang dibobot berdasarkan jumlah sampel tiap kelas. Lebih informatif dari accuracy ketika kelas tidak seimbang (*imbalanced*), karena memperhitungkan precision dan recall sekaligus.
-- **5-Fold Cross Validation** — dataset dibagi 5 bagian, model dilatih 5 kali dengan bagian yang berbeda sebagai data uji. Hasil CV lebih andal daripada test accuracy tunggal karena mengurangi bias pemilihan data.
+**Metode evaluasi:** 5-Fold Cross Validation — dataset dibagi 5 bagian, model dilatih 5 kali dengan bagian yang berbeda sebagai data uji. Hasil CV lebih andal daripada test accuracy tunggal karena mengurangi bias pemilihan data.
 
 ---
 
@@ -166,16 +163,11 @@ Distribusi kelas jumlah pakan menunjukkan 150g (46.6%) paling sering direkomenda
 |---|---|
 | `time_slot_confusion_matrix_comparison.png` | Confusion matrix 3 model berdampingan — waktu pakan |
 | `time_slot_accuracy_comparison.png` | Bar chart perbandingan akurasi 3 model — waktu pakan |
-| `time_slot_f1_comparison.png` | Bar chart perbandingan F1 Score 3 model — waktu pakan |
 | `time_slot_feature_importance.png` | Kontribusi tiap fitur — waktu pakan |
 | `time_slot_decision_tree_plot.png` | Visualisasi pohon keputusan — waktu pakan |
 | `amount_gram_confusion_matrix_comparison.png` | Confusion matrix 3 model berdampingan — jumlah pakan |
 | `amount_gram_accuracy_comparison.png` | Bar chart perbandingan akurasi 3 model — jumlah pakan |
-| `amount_gram_f1_comparison.png` | Bar chart perbandingan F1 Score 3 model — jumlah pakan |
 | `amount_gram_feature_importance.png` | Kontribusi tiap fitur — jumlah pakan |
 | `amount_gram_decision_tree_plot.png` | Visualisasi pohon keputusan — jumlah pakan |
 
 ---
-
-*Analisis ini dibuat untuk keperluan tugas mata kuliah Rekayasa Perangkat Lunak.*
-*EcoSmart Feeder — Kelompok 12, IPB University, 2026.*
