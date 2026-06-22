@@ -58,10 +58,13 @@ function httpsRequest(options, body) {
 // ── Step 1: Jalankan ML API ───────────────────────────────────────────────────
 function startMLApi() {
   console.log('\n🐍 Menjalankan ML API Flask...');
-  const ml = spawn('python', ['api.py'], {
-    cwd:   CONFIG.ML_DIR,
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+
+  // Di Windows dengan pyenv, python adalah .bat file
+  // Perlu spawn via cmd untuk resolve dengan benar
+  const isWindows = process.platform === 'win32';
+  const ml = isWindows
+    ? spawn('cmd', ['/c', 'python', 'api.py'], { cwd: CONFIG.ML_DIR, stdio: ['ignore', 'pipe', 'pipe'] })
+    : spawn('python', ['api.py'],              { cwd: CONFIG.ML_DIR, stdio: ['ignore', 'pipe', 'pipe'] });
 
   ml.stdout.on('data', (d) => process.stdout.write(`   [Flask] ${d}`));
   ml.stderr.on('data', (d) => process.stdout.write(`   [Flask] ${d}`));
@@ -76,9 +79,10 @@ function startMLApi() {
 // ── Step 2: Jalankan ngrok ────────────────────────────────────────────────────
 function startNgrok() {
   console.log('\n🚇 Menjalankan ngrok tunnel...');
-  const ng = spawn('ngrok', ['http', String(CONFIG.ML_PORT)], {
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+  const isWindows = process.platform === 'win32';
+  const ng = isWindows
+    ? spawn('cmd', ['/c', 'ngrok', 'http', String(CONFIG.ML_PORT)], { stdio: ['ignore', 'pipe', 'pipe'] })
+    : spawn('ngrok', ['http', String(CONFIG.ML_PORT)],               { stdio: ['ignore', 'pipe', 'pipe'] });
 
   ng.stdout.on('data', (d) => process.stdout.write(`   [ngrok] ${d}`));
   ng.stderr.on('data', (d) => process.stdout.write(`   [ngrok] ${d}`));
