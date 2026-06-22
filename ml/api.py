@@ -1,7 +1,7 @@
 """
 EcoSmart Feeder — ML API Server (Flask)
 ========================================
-REST API untuk serve model Decision Tree.
+REST API untuk serve model Gradient Boosting (model terbaik).
 Dipanggil oleh backend Fastify via HTTP.
 
 Endpoints:
