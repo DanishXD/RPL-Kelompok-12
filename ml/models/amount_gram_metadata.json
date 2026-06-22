@@ -1,6 +1,7 @@
 {
   "target": "amount_gram",
-  "best_model": "Random Forest",
+  "best_model": "Gradient Boosting",
+  "seed": 42,
   "features": [
     "temperature",
     "ph_level",
@@ -14,43 +15,31 @@
     "2": "150g",
     "3": "200g"
   },
-  "accuracy": 0.7975,
-  "cv_accuracy_mean": 0.787,
-  "cv_accuracy_std": 0.0182,
-  "f1_weighted": 0.8011,
-  "cv_f1_mean": 0.7926,
-  "cv_f1_std": 0.0175,
+  "accuracy": 0.8625,
+  "cv_accuracy_mean": 0.866,
+  "cv_accuracy_std": 0.0159,
   "all_results": {
     "Decision Tree": {
-      "accuracy": 0.66,
-      "cv_mean": 0.6745,
-      "cv_std": 0.023,
-      "f1_weighted": 0.6636,
-      "cv_f1_mean": 0.6793,
-      "cv_f1_std": 0.0175
+      "accuracy": 0.71,
+      "cv_mean": 0.715,
+      "cv_std": 0.0122
     },
     "Random Forest": {
       "accuracy": 0.7975,
-      "cv_mean": 0.787,
-      "cv_std": 0.0182,
-      "f1_weighted": 0.8011,
-      "cv_f1_mean": 0.7926,
-      "cv_f1_std": 0.0175
+      "cv_mean": 0.8165,
+      "cv_std": 0.018
     },
     "Gradient Boosting": {
-      "accuracy": 0.7925,
-      "cv_mean": 0.7665,
-      "cv_std": 0.0108,
-      "f1_weighted": 0.7961,
-      "cv_f1_mean": 0.7748,
-      "cv_f1_std": 0.0101
+      "accuracy": 0.8625,
+      "cv_mean": 0.866,
+      "cv_std": 0.0159
     }
   },
   "feature_importance": {
-    "temperature": 0.1986,
-    "ph_level": 0.1845,
-    "feed_level": 0.2547,
-    "light_level": 0.3137,
-    "hour": 0.0485
+    "temperature": 0.2768,
+    "ph_level": 0.2329,
+    "feed_level": 0.1973,
+    "light_level": 0.2717,
+    "hour": 0.0213
   }
 }
