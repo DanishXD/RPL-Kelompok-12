@@ -182,8 +182,9 @@ def predict():
 # ── Run server ────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
-    port = int(os.environ.get('ML_PORT', 5001))
-    print(f"\n🤖 EcoSmart ML API running on http://localhost:{port}")
+    # Render inject PORT, lokal pakai 5001
+    port = int(os.environ.get('PORT', os.environ.get('ML_PORT', 5001)))
+    print(f"\n🤖 EcoSmart ML API running on port {port}")
     print(f"   POST /predict    → prediksi waktu & jumlah pakan")
     print(f"   GET  /health     → status server")
     print(f"   GET  /model-info → akurasi model\n")
