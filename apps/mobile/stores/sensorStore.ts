@@ -38,60 +38,59 @@ export const useSensorStore = create<SensorState>((set) => ({
   lastUpdated:    null,
   activeDeviceId: null,
 
+  // ── Dipanggil saat data sensor baru masuk (polling / WebSocket) ─────────────
   setSensorData: (data) => {
-    // Cek threshold dari store saat data sensor baru masuk
-    const config = useThresholdStore.getState().config;
-    console.log('🌡️ Threshold aktif:', config.tempMin, '-', config.tempMax, '°C | pH:', config.phMin, '-', config.phMax, '| Pakan min:', config.feedMin);
-    console.log('📡 Sensor masuk:', data.temperature, '°C | pH:', data.phLevel, '| Pakan:', data.feedLevel, '%');
+    const config    = useThresholdStore.getState().config;
     const triggered: AlertData['alerts'] = [];
 
+    // Cek setiap field sensor terhadap threshold user
     (['temperature', 'phLevel', 'feedLevel'] as const).forEach(field => {
       const value = data[field];
       if (value === undefined) return;
       const result = checkThreshold(field, value, config);
       if (result.triggered && result.status) {
-        console.log(`🚨 Triggered: ${field} = ${value} (${result.status})`);
         triggered.push({ field, value, status: result.status });
       }
     });
 
-    // Kalau ada yang melewati threshold → tambah alert dan kirim notifikasi
+    const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
     if (triggered.length > 0) {
-      const alertData: AlertData = {
-        deviceId:  data.deviceId,
-        alerts:    triggered,
-        timestamp: new Date().toISOString(),
-      };
-      // Panggil addAlert langsung via set
       const messages = triggered.map(a => {
         const label = a.field === 'temperature' ? 'Suhu'
           : a.field === 'phLevel' ? 'pH Air' : 'Level Pakan';
         return `${label} ${a.status === 'high' ? 'terlalu tinggi' : 'terlalu rendah'} (${a.value})`;
       });
+
       const isCritical = triggered.some(a =>
         (a.field === 'feedLevel'   && a.value < config.feedMin * 0.5) ||
         (a.field === 'temperature' && (a.value > config.tempMax + 4 || a.value < config.tempMin - 4))
       );
+
       sendLocalNotification(
         isCritical ? '🚨 Alert Kritis EcoSmart' : '⚠️ Peringatan EcoSmart',
         messages.join(', ')
       );
+
+      const alertData: AlertData = {
+        deviceId:  data.deviceId,
+        alerts:    triggered,
+        timestamp: new Date().toISOString(),
+      };
+
       set(state => ({
         data,
-        lastUpdated: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+        lastUpdated: now,
         alerts: [alertData, ...state.alerts].slice(0, 20),
       }));
     } else {
-      set({
-        data,
-        lastUpdated: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-      });
+      set({ data, lastUpdated: now });
     }
   },
 
+  // ── Dipanggil saat alert masuk dari WebSocket backend ──────────────────────
   addAlert: (alert) => {
     const config = useThresholdStore.getState().config;
-    console.log('📨 addAlert dipanggil dari WebSocket:', JSON.stringify(alert.alerts));
 
     // Filter hanya alert yang benar-benar melewati threshold user
     const filtered = alert.alerts.filter(a => {
@@ -103,17 +102,12 @@ export const useSensorStore = create<SensorState>((set) => ({
       return result.triggered;
     });
 
-    // Kalau tidak ada yang melewati threshold user, abaikan
-    if (filtered.length === 0) {
-      console.log('✅ Alert diabaikan — tidak melewati threshold user');
-      return;
-    }
+    if (filtered.length === 0) return;  // tidak melewati threshold user
 
-    const messages = filtered.map((a) => {
+    const messages = filtered.map(a => {
       const label = a.field === 'temperature' ? 'Suhu'
         : a.field === 'phLevel' ? 'pH Air' : 'Level Pakan';
-      const dir = a.status === 'high' ? 'terlalu tinggi' : 'terlalu rendah';
-      return `${label} ${dir} (${a.value})`;
+      return `${label} ${a.status === 'high' ? 'terlalu tinggi' : 'terlalu rendah'} (${a.value})`;
     });
 
     const isCritical = filtered.some(a =>
@@ -128,11 +122,11 @@ export const useSensorStore = create<SensorState>((set) => ({
     );
 
     const filteredAlert: AlertData = { ...alert, alerts: filtered };
-    set((s) => ({ alerts: [filteredAlert, ...s.alerts].slice(0, 20) }));
+    set(s => ({ alerts: [filteredAlert, ...s.alerts].slice(0, 20) }));
   },
 
-  dismissAlert:    (index) => set((s) => ({ alerts: s.alerts.filter((_, i) => i !== index) })),
-  setConnected:    (isConnected)    => set({ isConnected }),
+  dismissAlert:    (index) => set(s => ({ alerts: s.alerts.filter((_, i) => i !== index) })),
+  setConnected:    (v)              => set({ isConnected: v }),
   setActiveDevice: (activeDeviceId) => set({ activeDeviceId }),
-  reset:           () => set({ data: null, alerts: [], isConnected: false, lastUpdated: null }),
+  reset:           ()               => set({ data: null, alerts: [], isConnected: false, lastUpdated: null }),
 }));

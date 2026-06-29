@@ -426,31 +426,9 @@ export default function ControlScreen() {
         setSchedules(res.data);
         syncToStore(res.data); // sync ke global store
       } catch {
-        const fallback = [
-          {
-            id: "1",
-            time: "07:00",
-            amount: "100g",
-            days: ["everyday"],
-            isActive: true,
-          },
-          {
-            id: "2",
-            time: "12:00",
-            amount: "120g",
-            days: ["everyday"],
-            isActive: true,
-          },
-          {
-            id: "3",
-            time: "18:00",
-            amount: "150g",
-            days: ["monday", "wednesday", "friday"],
-            isActive: false,
-          },
-        ];
-        setSchedules(fallback);
-        syncToStore(fallback);
+        // API gagal — tampilkan kosong, bukan data palsu
+        setSchedules([]);
+        syncToStore([]);
       } finally {
         setLoadingSched(false);
       }

@@ -38,4 +38,17 @@ export async function authRoutes(fastify: FastifyInstance) {
     const data = await svc.getProfile(user.sub);
     return reply.status(200).send({ success: true, data });
   });
+
+  // PATCH /api/auth/profile — update nama user
+  fastify.patch('/profile', { preHandler: [fastify.authenticate] }, async (req: FastifyRequest, reply: FastifyReply) => {
+    const user = req.user as JwtPayload;
+    const { name } = req.body as { name?: string };
+    if (!name || name.trim().length < 2) {
+      return reply.status(400).send({ success: false, error: 'Nama minimal 2 karakter' });
+    }
+    const { users } = await import('../../../drizzle/schema');
+    const { eq } = await import('drizzle-orm');
+    await fastify.db.update(users).set({ name: name.trim() }).where(eq(users.id, user.sub));
+    return reply.status(200).send({ success: true, message: 'Nama berhasil diperbarui', data: { name: name.trim() } });
+  });
 }

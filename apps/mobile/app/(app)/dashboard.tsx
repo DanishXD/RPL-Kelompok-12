@@ -24,7 +24,7 @@ function getTempStatus(t?: number): 'normal'|'warning'|'danger' {
   return 'normal';
 }
 function getFeedStatus(f?: number): 'normal'|'warning'|'danger' {
-  if (!f) return 'normal';
+  if (f === undefined || f === null) return 'normal';
   if (f < 10) return 'danger';
   if (f < 20) return 'warning';
   return 'normal';
@@ -72,15 +72,21 @@ export default function DashboardScreen() {
         const res = await api.get(`/iot/sensors/latest?deviceId=${deviceId}`);
         if (res.data?.data) setSensorData(res.data.data);
       } catch {
-        // Gagal polling — WebSocket mungkin masih aktif, tidak masalah
+        // Gagal polling — tidak masalah
       }
     };
 
-    // Poll pertama langsung
+    // Poll pertama selalu
     poll();
 
-    // Poll setiap 3 detik
-    pollRef.current = setInterval(poll, 3000);
+    // Poll setiap 3 detik HANYA saat offline (WebSocket tidak terhubung)
+    // Saat online WebSocket yang handle update, polling dihentikan
+    pollRef.current = setInterval(() => {
+      if (!useSensorStore.getState().isConnected) {
+        poll();
+      }
+    }, 3000);
+
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };

@@ -283,7 +283,11 @@ export default function MonitoringScreen() {
         <Text style={styles.sectionTitle}>Statistik ({RANGE_LABEL[range]})</Text>
         <View style={styles.statsCard}>
           {[
-            { label: 'Rata-rata', val: statData ? `${statData.avg}${cfg.unit}` : (data?.temperature !== undefined ? `${data.temperature}${cfg.unit}` : '—') },
+            { label: 'Rata-rata', val: statData ? `${statData.avg}${cfg.unit}` : (
+                activeChart === 'suhu'  && data?.temperature !== undefined ? `${data.temperature}${cfg.unit}` :
+                activeChart === 'pakan' && data?.feedLevel   !== undefined ? `${data.feedLevel}${cfg.unit}` :
+                activeChart === 'ph'    && data?.phLevel     !== undefined ? `${data.phLevel}${cfg.unit}` : '—'
+            ) },
             { label: 'Tertinggi', val: statData ? `${statData.max}${cfg.unit}` : '—' },
             { label: 'Terendah',  val: statData ? `${statData.min}${cfg.unit}` : '—' },
           ].map((s, i, arr) => (
