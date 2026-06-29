@@ -4,10 +4,9 @@ EcoSmart Feeder — Dashboard Analitik ML
 Jalankan: streamlit run dashboard.py
 """
 
-import json, os
+import json, os, pickle
 import numpy  as np
 import pandas as pd
-import requests
 import streamlit as st
 
 # ── Page config ───────────────────────────────────────────────────────────────
@@ -112,12 +111,24 @@ BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
 DATA_PATH   = os.path.join(BASE_DIR, "data",    "feeding_dataset.csv")
 MODELS_DIR  = os.path.join(BASE_DIR, "models")
 REPORTS_DIR = os.path.join(BASE_DIR, "reports")
-ML_API_URL  = os.environ.get("ML_API_URL", "http://localhost:5001")
 
 SLOT_MAP   = {0: "Pagi (06–08)", 1: "Siang (12–13)", 2: "Sore (17–18)", 3: "Tidak Direkomendasikan"}
 GRAM_MAP   = {0: "50g", 1: "100g", 2: "150g", 3: "200g"}
 FEAT_LABEL = {"temperature":"Suhu (°C)","ph_level":"pH Air","feed_level":"Level Pakan (%)","light_level":"Cahaya (lux)","hour":"Jam"}
 MODEL_COLOR = {"Decision Tree":"#60a5fa","Random Forest":"#fb923c","Gradient Boosting":"#a78bfa"}
+
+TIME_LABELS = {
+    0: {"label":"Pagi",                  "time":"06:00–08:00", "description":"Waktu pagi optimal untuk pemberian pakan"},
+    1: {"label":"Siang",                 "time":"12:00–13:00", "description":"Waktu siang untuk pemberian pakan"},
+    2: {"label":"Sore",                  "time":"17:00–18:00", "description":"Waktu sore optimal untuk pemberian pakan"},
+    3: {"label":"Tidak Direkomendasikan","time":None,           "description":"Kondisi sensor tidak mendukung pemberian pakan"},
+}
+AMOUNT_LABELS = {
+    0: {"gram":50,  "description":"Kondisi kurang optimal, berikan pakan minimal"},
+    1: {"gram":100, "description":"Kondisi normal, berikan pakan standar"},
+    2: {"gram":150, "description":"Kondisi baik, berikan pakan lebih banyak"},
+    3: {"gram":200, "description":"Kondisi sangat optimal, berikan pakan maksimal"},
+}
 
 @st.cache_data
 def load_metadata(target):
@@ -127,6 +138,48 @@ def load_metadata(target):
 @st.cache_data
 def load_dataset():
     return pd.read_csv(DATA_PATH) if os.path.exists(DATA_PATH) else pd.DataFrame()
+
+@st.cache_resource
+def load_models():
+    """Load model .pkl langsung — tidak butuh Flask API."""
+    try:
+        with open(os.path.join(MODELS_DIR, "time_slot_model.pkl"),   "rb") as f:
+            model_time   = pickle.load(f)
+        with open(os.path.join(MODELS_DIR, "amount_gram_model.pkl"), "rb") as f:
+            model_amount = pickle.load(f)
+        return model_time, model_amount
+    except FileNotFoundError:
+        return None, None
+
+def predict_local(temperature, ph_level, feed_level, light_level, hour):
+    """Prediksi langsung dari model .pkl tanpa HTTP request."""
+    model_time, model_amount = load_models()
+    if model_time is None:
+        return None
+
+    X = np.array([[temperature, ph_level, feed_level, light_level, hour]])
+
+    time_pred    = int(model_time.predict(X)[0])
+    amount_pred  = int(model_amount.predict(X)[0])
+    time_proba   = model_time.predict_proba(X)[0].tolist()
+    amount_proba = model_amount.predict_proba(X)[0].tolist()
+
+    time_info   = TIME_LABELS[time_pred]
+    amount_info = AMOUNT_LABELS[amount_pred]
+
+    if time_pred == 3:
+        rec = (f"Kondisi kolam saat ini kurang ideal untuk pemberian pakan. "
+               f"Suhu {temperature}°C, pH {ph_level}. Tunggu hingga kondisi membaik.")
+    else:
+        rec = (f"Waktu terbaik pemberian pakan: {time_info['label']} ({time_info['time']}). "
+               f"Jumlah yang direkomendasikan: {amount_info['gram']}g. "
+               f"Kondisi kolam: suhu {temperature}°C, pH {ph_level}, pakan tersisa {feed_level}%.")
+
+    return {
+        "time_slot":   {**time_info,   "confidence": round(max(time_proba)*100, 2)},
+        "amount_gram": {**amount_info, "confidence": round(max(amount_proba)*100, 2)},
+        "recommendation": rec,
+    }
 
 def img_path(name):
     p = os.path.join(REPORTS_DIR, name)
@@ -492,20 +545,14 @@ elif page == "🎯 Prediksi Live":
     st.markdown("## 🎯 Prediksi Live")
     st.markdown("Masukkan kondisi kolam untuk mendapat rekomendasi dari **Gradient Boosting**.")
 
-    # Status API
-    api_ok = False
-    try:
-        r = requests.get(f"{ML_API_URL}/health", timeout=3)
-        api_ok = r.status_code == 200 and r.json().get("models_loaded", False)
-    except Exception:
-        pass
+    # Cek model tersedia
+    model_time, model_amount = load_models()
+    if model_time is None:
+        st.error("Model tidak ditemukan. Jalankan `python train_model.py` terlebih dahulu.")
+        st.stop()
 
-    status_color = "#10b981" if api_ok else "#f59e0b"
-    status_text  = f"● ML API Aktif — {ML_API_URL}" if api_ok else f"● ML API Offline — {ML_API_URL}"
-    st.markdown(f'<div style="color:{status_color};font-weight:600;font-size:13px;margin-bottom:16px;">{status_text}</div>',
+    st.markdown('<div style="color:#10b981;font-weight:600;font-size:13px;margin-bottom:16px;">● Model Loaded — Gradient Boosting (prediksi langsung, tanpa API)</div>',
                 unsafe_allow_html=True)
-    if not api_ok:
-        st.info("Jalankan `python api.py` di terminal untuk mengaktifkan prediksi live.")
 
     # Input form
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
@@ -513,48 +560,39 @@ elif page == "🎯 Prediksi Live":
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        temperature = st.slider("🌡️ Suhu Air (°C)",        20.0, 36.0, 28.0, 0.1)
-        ph_level    = st.slider("💧 pH Air",                5.0,  9.5,  7.2, 0.1)
+        temperature = st.slider("🌡️ Suhu Air (°C)",           20.0, 36.0, 28.0, 0.1)
+        ph_level    = st.slider("💧 pH Air",                   5.0,  9.5,  7.2, 0.1)
     with c2:
-        feed_level  = st.slider("🌾 Level Pakan (%)",       0,    100,  65,  1)
-        light_level = st.slider("☀️ Intensitas Cahaya (lux)", 20,  800,  350, 10)
+        feed_level  = st.slider("🌾 Level Pakan (%)",          0,    100,  65,  1)
+        light_level = st.slider("☀️ Intensitas Cahaya (lux)",  20,   800,  350, 10)
     with c3:
         hour = st.slider("🕐 Jam Saat Ini", 0, 23, 7, 1, format="%02d:00")
-        st.markdown(f"""<div style="background:rgba(124,58,237,0.15);border-radius:10px;padding:16px;margin-top:8px;text-align:center;">
+        st.markdown(f"""<div style="background:rgba(124,58,237,0.15);border-radius:10px;
+            padding:16px;margin-top:8px;text-align:center;">
             <div style="font-size:11px;color:#a0a0cc;text-transform:uppercase;">Waktu Dipilih</div>
             <div style="font-size:28px;font-weight:800;color:#c4b5fd;">{hour:02d}:00</div>
         </div>""", unsafe_allow_html=True)
 
-    submitted = st.button("🔍 Prediksi Sekarang", type="primary", use_container_width=True, disabled=not api_ok)
+    submitted = st.button("🔍 Prediksi Sekarang", type="primary", use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Hasil
-    if submitted and api_ok:
-        with st.spinner("Memproses..."):
-            try:
-                resp = requests.post(f"{ML_API_URL}/predict", json={
-                    "temperature": temperature, "ph_level": ph_level,
-                    "feed_level": feed_level, "light_level": light_level, "hour": hour,
-                }, timeout=10)
-                result = resp.json()
-            except Exception as e:
-                result = None
-                st.error(f"Gagal: {e}")
+    # Hasil prediksi
+    if submitted:
+        result = predict_local(temperature, ph_level, feed_level, light_level, hour)
 
-        if result and result.get("success"):
-            pred = result["data"]["prediction"]
-            ts   = pred["time_slot"]
-            ag   = pred["amount_gram"]
-            rec  = result["data"]["recommendation"]
+        if result:
+            ts  = result["time_slot"]
+            ag  = result["amount_gram"]
+            rec = result["recommendation"]
 
             st.markdown("<br>", unsafe_allow_html=True)
-            col_a, col_b, col_c = st.columns([1,1,2])
+            col_a, col_b, col_c = st.columns([1, 1, 2])
 
             with col_a:
                 st.markdown(f"""<div class="pred-card">
                     <div class="pred-label">⏰ Waktu Terbaik</div>
                     <div class="pred-value">{ts['label']}</div>
-                    <div style="color:#a78bfa;font-size:14px;margin-bottom:6px;">{ts.get('time_range') or '—'}</div>
+                    <div style="color:#a78bfa;font-size:14px;margin-bottom:6px;">{ts.get('time') or '—'}</div>
                     <div class="pred-conf">Keyakinan model: <b>{ts['confidence']}%</b></div>
                 </div>""", unsafe_allow_html=True)
 
@@ -571,7 +609,7 @@ elif page == "🎯 Prediksi Live":
                     <div class="card-title">📋 Rekomendasi Lengkap</div>
                     <p style="color:#d0d0f0;font-size:14px;line-height:1.8;">{rec}</p>
                     <hr style="border-color:rgba(255,255,255,0.1);">
-                    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;">
+                    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:#a0a0cc;">
                         <span>🌡️ {temperature}°C</span>
                         <span>💧 pH {ph_level}</span>
                         <span>🌾 {feed_level}%</span>
@@ -584,12 +622,10 @@ elif page == "🎯 Prediksi Live":
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown('<div class="card-title">📚 Panduan Kondisi Kolam Optimal</div>', unsafe_allow_html=True)
-    thresh_data = {
-        "Parameter":    ["Suhu Air", "pH Air", "Level Pakan", "Cahaya"],
-        "Optimal":      ["26–30°C",  "6.5–8.0","≥ 40%",       "< 300 lux"],
-        "Batas Bawah":  ["24°C",     "6.5",    "20%",         "—"],
-        "Batas Atas":   ["32°C",     "8.5",    "—",           "—"],
-        "Satuan":       ["°C",       "—",      "%",           "lux"],
-    }
-    st.dataframe(pd.DataFrame(thresh_data), hide_index=True, use_container_width=True)
+    st.dataframe(pd.DataFrame({
+        "Parameter":   ["Suhu Air", "pH Air", "Level Pakan", "Cahaya"],
+        "Optimal":     ["26–30°C",  "6.5–8.0","≥ 40%",       "< 300 lux"],
+        "Batas Bawah": ["24°C",     "6.5",    "20%",         "—"],
+        "Batas Atas":  ["32°C",     "8.5",    "—",           "—"],
+    }), hide_index=True, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
