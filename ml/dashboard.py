@@ -405,7 +405,7 @@ elif page == "🤖 Perbandingan Model":
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
         st.markdown('<div class="card-title">📊 Grafik Akurasi — Waktu Pakan</div>', unsafe_allow_html=True)
         p = img_path("time_slot_accuracy_comparison.png")
-        if p: st.image(p, use_column_width=True)
+        if p: st.image(p, use_container_width=True)
         else: st.info("Jalankan train_model.py untuk generate grafik.")
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -413,7 +413,7 @@ elif page == "🤖 Perbandingan Model":
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
         st.markdown('<div class="card-title">📊 Grafik Akurasi — Jumlah Pakan</div>', unsafe_allow_html=True)
         p = img_path("amount_gram_accuracy_comparison.png")
-        if p: st.image(p, use_column_width=True)
+        if p: st.image(p, use_container_width=True)
         else: st.info("Jalankan train_model.py untuk generate grafik.")
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -423,7 +423,7 @@ elif page == "🤖 Perbandingan Model":
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
         st.markdown('<div class="card-title">📈 Grafik F1 Score — Waktu Pakan</div>', unsafe_allow_html=True)
         p = img_path("time_slot_f1_comparison.png")
-        if p: st.image(p, use_column_width=True)
+        if p: st.image(p, use_container_width=True)
         else: st.info("Belum tersedia.")
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -431,7 +431,7 @@ elif page == "🤖 Perbandingan Model":
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
         st.markdown('<div class="card-title">📈 Grafik F1 Score — Jumlah Pakan</div>', unsafe_allow_html=True)
         p = img_path("amount_gram_f1_comparison.png")
-        if p: st.image(p, use_column_width=True)
+        if p: st.image(p, use_container_width=True)
         else: st.info("Belum tersedia.")
         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -439,14 +439,14 @@ elif page == "🤖 Perbandingan Model":
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown('<div class="card-title">🔲 Confusion Matrix — Waktu Pakan (3 Model)</div>', unsafe_allow_html=True)
     p = img_path("time_slot_confusion_matrix_comparison.png")
-    if p: st.image(p, use_column_width=True)
+    if p: st.image(p, use_container_width=True)
     else: st.info("Belum tersedia.")
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown('<div class="card-title">🔲 Confusion Matrix — Jumlah Pakan (3 Model)</div>', unsafe_allow_html=True)
     p = img_path("amount_gram_confusion_matrix_comparison.png")
-    if p: st.image(p, use_column_width=True)
+    if p: st.image(p, use_container_width=True)
     else: st.info("Belum tersedia.")
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -497,27 +497,27 @@ elif page == "🌳 Interpretasi":
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
         st.markdown('<div class="card-title">📊 Feature Importance Chart — Waktu Pakan</div>', unsafe_allow_html=True)
         p = img_path("time_slot_feature_importance.png")
-        if p: st.image(p, use_column_width=True)
+        if p: st.image(p, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col4:
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
         st.markdown('<div class="card-title">📊 Feature Importance Chart — Jumlah Pakan</div>', unsafe_allow_html=True)
         p = img_path("amount_gram_feature_importance.png")
-        if p: st.image(p, use_column_width=True)
+        if p: st.image(p, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     # Decision Tree plots
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown('<div class="card-title">🌳 Decision Tree — Waktu Pakan (kedalaman 3 dari 6)</div>', unsafe_allow_html=True)
     p = img_path("time_slot_decision_tree_plot.png")
-    if p: st.image(p, use_column_width=True)
+    if p: st.image(p, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown('<div class="content-card">', unsafe_allow_html=True)
     st.markdown('<div class="card-title">🌳 Decision Tree — Jumlah Pakan (kedalaman 3 dari 6)</div>', unsafe_allow_html=True)
     p = img_path("amount_gram_decision_tree_plot.png")
-    if p: st.image(p, use_column_width=True)
+    if p: st.image(p, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
     # Insight cards
