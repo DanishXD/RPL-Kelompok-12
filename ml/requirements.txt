@@ -1,7 +1,8 @@
 flask==3.0.3
 flask-cors==4.0.1
-scikit-learn==1.5.1
-pandas==2.2.2
+scikit-learn==1.5.2
+pandas==2.2.3
 numpy==1.26.4
-matplotlib==3.7.5
-streamlit==1.35.0
+matplotlib==3.9.4
+streamlit==1.45.1
+pillow==11.2.1
