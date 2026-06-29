@@ -1,16 +1,116 @@
-node_modules/
+# ============================================================
+# EcoSmart Feeder — .gitignore
+# Stack: Python/Flask, Next.js, ESP32/PlatformIO, Docker
+# ============================================================
+
+
+# ────────────────────────────────────────────────────────────
+# PYTHON
+# ────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Distribution / packaging
 dist/
 build/
-.expo/
- 
-# Environment — JANGAN pernah commit file ini!
+*.egg-info/
+*.egg
+.eggs/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Logs & temp
+*.log
+*.tmp
+
+# ML artifacts (uncomment if you don't want to track models)
+# ml/models/
+# ml/data/
+
+
+# ────────────────────────────────────────────────────────────
+# NODE.JS / NEXT.JS
+# ────────────────────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js build output
+.next/
+out/
+
+# Env files
 .env
 .env.local
-.env.production
- 
-*.log
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+
+# ────────────────────────────────────────────────────────────
+# ESP32 / PLATFORMIO
+# ────────────────────────────────────────────────────────────
+firmware/.pio/
+firmware/.pioenvs/
+firmware/.piolibdeps/
+firmware/esp32/.pio/
+
+
+# ────────────────────────────────────────────────────────────
+# DOCKER
+# ────────────────────────────────────────────────────────────
+# Keep docker-compose.yml tracked, ignore overrides
+docker-compose.override.yml
+docker-compose.*.yml
+!docker-compose.yml
+
+
+# ────────────────────────────────────────────────────────────
+# IDE & EDITORS
+# ────────────────────────────────────────────────────────────
+# JetBrains (IntelliJ, PyCharm, WebStorm, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code (keep shared settings if you want, ignore personal)
+.vscode/
+!.vscode/extensions.json
+
+# DevContainer (keep if shared with team)
+# .devcontainer/
+
+
+# ────────────────────────────────────────────────────────────
+# OS FILES
+# ────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
-.vscode/
-.idea/
-drizzle/meta/
+desktop.ini
+
+
+# ────────────────────────────────────────────────────────────
+# MISC
+# ────────────────────────────────────────────────────────────
+*.bak
+*.swp
+*.swo
