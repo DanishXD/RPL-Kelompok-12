@@ -7,7 +7,11 @@ Jalankan: streamlit run dashboard.py
 import json, os, pickle
 import numpy  as np
 import pandas as pd
+import matplotlib
+import matplotlib.pyplot as plt
 import streamlit as st
+
+matplotlib.use("Agg")
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -248,13 +252,26 @@ if page == "🏠 Overview":
             cv_ts   = [meta_ts["all_results"][m]["cv_mean"]*100   for m in models]
             cv_ag   = [meta_ag["all_results"][m]["cv_mean"]*100   for m in models]
 
-            chart_df = pd.DataFrame({
-                "Waktu Pakan (Test)":  acc_ts,
-                "Jumlah Pakan (Test)": acc_ag,
-                "Waktu Pakan (CV)":    cv_ts,
-                "Jumlah Pakan (CV)":   cv_ag,
-            }, index=models)
-            st.bar_chart(chart_df, height=280)
+            x = np.arange(len(models))
+            w = 0.2
+            fig, ax = plt.subplots(figsize=(8, 3.5))
+            fig.patch.set_facecolor('#1a1740')
+            ax.set_facecolor('#1a1740')
+            ax.bar(x - 1.5*w, acc_ts, w, label='Waktu (Test)',  color='#f87171', alpha=0.9)
+            ax.bar(x - 0.5*w, cv_ts,  w, label='Waktu (CV)',    color='#fca5a5', alpha=0.7)
+            ax.bar(x + 0.5*w, acc_ag, w, label='Jumlah (Test)', color='#60a5fa', alpha=0.9)
+            ax.bar(x + 1.5*w, cv_ag,  w, label='Jumlah (CV)',   color='#93c5fd', alpha=0.7)
+            ax.set_xticks(x)
+            ax.set_xticklabels(models, rotation=0, ha='center', color='#e0e0ff', fontsize=10)
+            ax.set_ylabel('Accuracy (%)', color='#a0a0cc', fontsize=9)
+            ax.set_ylim(60, 100)
+            ax.tick_params(colors='#a0a0cc')
+            ax.spines[:].set_color('#ffffff20')
+            ax.legend(loc='lower right', fontsize=8, facecolor='#2d2b55', labelcolor='#e0e0ff')
+            ax.grid(axis='y', alpha=0.15)
+            plt.tight_layout()
+            st.pyplot(fig, use_container_width=True)
+            plt.close()
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_right:
@@ -339,7 +356,22 @@ elif page == "📊 Dataset":
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
         st.markdown('<div class="card-title">⏰ Distribusi Waktu Pakan</div>', unsafe_allow_html=True)
         ts_cnt = df["recommended_time_slot"].map(SLOT_MAP).value_counts()
-        st.bar_chart(ts_cnt, height=220)
+
+        fig, ax = plt.subplots(figsize=(5, 3))
+        fig.patch.set_facecolor('#1a1740')
+        ax.set_facecolor('#1a1740')
+        bars = ax.bar(ts_cnt.index, ts_cnt.values, color=['#a78bfa','#60a5fa','#f87171','#34d399'], alpha=0.85)
+        ax.set_xticklabels(ts_cnt.index, rotation=0, ha='center', color='#e0e0ff', fontsize=8)
+        ax.set_ylabel('Jumlah', color='#a0a0cc', fontsize=9)
+        ax.tick_params(colors='#a0a0cc')
+        ax.spines[:].set_color('#ffffff20')
+        ax.grid(axis='y', alpha=0.15)
+        for bar in bars:
+            ax.text(bar.get_x()+bar.get_width()/2, bar.get_height()+5,
+                    str(int(bar.get_height())), ha='center', color='#e0e0ff', fontsize=8)
+        plt.tight_layout()
+        st.pyplot(fig, use_container_width=True)
+        plt.close()
         ts_df = pd.DataFrame({"Kelas":ts_cnt.index,"Jumlah":ts_cnt.values,"(%)":( ts_cnt.values/len(df)*100).round(1)})
         st.dataframe(ts_df, hide_index=True, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
@@ -348,7 +380,22 @@ elif page == "📊 Dataset":
         st.markdown('<div class="content-card">', unsafe_allow_html=True)
         st.markdown('<div class="card-title">⚖️ Distribusi Jumlah Pakan</div>', unsafe_allow_html=True)
         ag_cnt = df["recommended_amount_gram"].map(GRAM_MAP).value_counts()
-        st.bar_chart(ag_cnt, height=220)
+
+        fig, ax = plt.subplots(figsize=(5, 3))
+        fig.patch.set_facecolor('#1a1740')
+        ax.set_facecolor('#1a1740')
+        bars = ax.bar(ag_cnt.index, ag_cnt.values, color=['#a78bfa','#60a5fa','#f87171','#34d399'], alpha=0.85)
+        ax.set_xticklabels(ag_cnt.index, rotation=0, ha='center', color='#e0e0ff', fontsize=9)
+        ax.set_ylabel('Jumlah', color='#a0a0cc', fontsize=9)
+        ax.tick_params(colors='#a0a0cc')
+        ax.spines[:].set_color('#ffffff20')
+        ax.grid(axis='y', alpha=0.15)
+        for bar in bars:
+            ax.text(bar.get_x()+bar.get_width()/2, bar.get_height()+5,
+                    str(int(bar.get_height())), ha='center', color='#e0e0ff', fontsize=8)
+        plt.tight_layout()
+        st.pyplot(fig, use_container_width=True)
+        plt.close()
         ag_df = pd.DataFrame({"Kelas":ag_cnt.index,"Jumlah":ag_cnt.values,"(%)":( ag_cnt.values/len(df)*100).round(1)})
         st.dataframe(ag_df, hide_index=True, use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
