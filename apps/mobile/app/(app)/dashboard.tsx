@@ -76,16 +76,12 @@ export default function DashboardScreen() {
       }
     };
 
-    // Poll pertama selalu
+    // Poll pertama langsung
     poll();
 
-    // Poll setiap 3 detik HANYA saat offline (WebSocket tidak terhubung)
-    // Saat online WebSocket yang handle update, polling dihentikan
-    pollRef.current = setInterval(() => {
-      if (!useSensorStore.getState().isConnected) {
-        poll();
-      }
-    }, 3000);
+    // Poll setiap 3 detik — selalu aktif untuk update tampilan
+    // Alert tidak akan double karena sensorStore cek threshold sebelum kirim notif
+    pollRef.current = setInterval(poll, 3000);
 
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);

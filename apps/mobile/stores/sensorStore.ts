@@ -56,36 +56,46 @@ export const useSensorStore = create<SensorState>((set) => ({
     const now = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
 
     if (triggered.length > 0) {
-      const messages = triggered.map(a => {
-        const label = a.field === 'temperature' ? 'Suhu'
-          : a.field === 'phLevel' ? 'pH Air' : 'Level Pakan';
-        return `${label} ${a.status === 'high' ? 'terlalu tinggi' : 'terlalu rendah'} (${a.value})`;
-      });
+      // Cek apakah alert untuk timestamp yang sama sudah pernah dikirim
+      const currentTimestamp = data.timestamp;
+      const lastTimestamp    = useSensorStore.getState().data?.timestamp;
 
-      const isCritical = triggered.some(a =>
-        (a.field === 'feedLevel'   && a.value < config.feedMin * 0.5) ||
-        (a.field === 'temperature' && (a.value > config.tempMax + 4 || a.value < config.tempMin - 4))
-      );
+      const isNewData = currentTimestamp !== lastTimestamp;
 
-      sendLocalNotification(
-        isCritical ? '🚨 Alert Kritis EcoSmart' : '⚠️ Peringatan EcoSmart',
-        messages.join(', ')
-      );
+      if (isNewData) {
+        const messages = triggered.map(a => {
+          const label = a.field === 'temperature' ? 'Suhu'
+            : a.field === 'phLevel' ? 'pH Air' : 'Level Pakan';
+          return `${label} ${a.status === 'high' ? 'terlalu tinggi' : 'terlalu rendah'} (${a.value})`;
+        });
 
-      const alertData: AlertData = {
-        deviceId:  data.deviceId,
-        alerts:    triggered,
-        timestamp: new Date().toISOString(),
-      };
+        const isCritical = triggered.some(a =>
+          (a.field === 'feedLevel'   && a.value < config.feedMin * 0.5) ||
+          (a.field === 'temperature' && (a.value > config.tempMax + 4 || a.value < config.tempMin - 4))
+        );
 
-      set(state => ({
-        data,
-        lastUpdated: now,
-        alerts: [alertData, ...state.alerts].slice(0, 20),
-      }));
-    } else {
-      set({ data, lastUpdated: now });
+        sendLocalNotification(
+          isCritical ? '🚨 Alert Kritis EcoSmart' : '⚠️ Peringatan EcoSmart',
+          messages.join(', ')
+        );
+
+        const alertData: AlertData = {
+          deviceId:  data.deviceId,
+          alerts:    triggered,
+          timestamp: new Date().toISOString(),
+        };
+
+        set(state => ({
+          data,
+          lastUpdated: now,
+          alerts: [alertData, ...state.alerts].slice(0, 20),
+        }));
+        return;
+      }
     }
+
+    // Update tampilan saja, tidak kirim notifikasi
+    set({ data, lastUpdated: now });
   },
 
   // ── Dipanggil saat alert masuk dari WebSocket backend ──────────────────────
